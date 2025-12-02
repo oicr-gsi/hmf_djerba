@@ -1,3 +1,27 @@
+# emacs temporary files
+*~
+*#
+.#*
+
+# build outputs
+djerba.egg-info
+build
+dist
+
+# R temporary files
++*.Rhistory
++*.RData
+
+# djerba logfile
+djerba.log
+
+# misc files from IDEs etc
+.idea
+.project
+.pydevproject
+*.DS_Store
+*.vscode
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
