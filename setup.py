@@ -39,11 +39,11 @@ setup(
     packages=find_packages(where=package_root),
     package_dir={'' : package_root},
     package_data={
-        'djerba.plugins.hmf.fusion': install_wildcards,
-        'djerba.plugins.hmf.genomic_landscape': install_wildcards,
-        'djerba.plugins.hmf.wgts.cnv_purple': install_wildcards,
-        'djerba.plugins.hmf.wgts.common.cnv': install_wildcards,
-        'djerba.plugins.hmf.wgts.snv_indel': install_wildcards,
+        'hmf_djerba.plugins.hmf.fusion': install_wildcards,
+        'hmf_djerba.plugins.hmf.genomic_landscape': install_wildcards,
+        'hmf_djerba.plugins.hmf.wgts.cnv_purple': install_wildcards,
+        'hmf_djerba.plugins.hmf.wgts.common.cnv': install_wildcards,
+        'hmf_djerba.plugins.hmf.wgts.snv_indel': install_wildcards,
     },
     install_requires=[
         'djerba',
@@ -71,7 +71,7 @@ setup(
     description="Create reports from metadata and workflow output",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/oicr-gsi/djerba",
+    url="https://github.com/oicr-gsi/hmf_djerba",
     keywords=['cancer', 'bioinformatics'],
     license='GPL 3.0',
 )
