@@ -39,8 +39,8 @@ setup(
     packages=find_packages(where=package_root),
     package_dir={'' : package_root},
     package_data={
-        'djerba.plugins.fusion': install_wildcards,
-        'djerba.plugins.genomic_landscape': install_wildcards,
+        'djerba.plugins.hmf.fusion': install_wildcards,
+        'djerba.plugins.hmf.genomic_landscape': install_wildcards,
         'djerba.plugins.hmf.wgts.cnv_purple': install_wildcards,
         'djerba.plugins.hmf.wgts.common.cnv': install_wildcards,
         'djerba.plugins.hmf.wgts.snv_indel': install_wildcards,
