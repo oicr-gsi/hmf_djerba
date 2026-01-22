@@ -2,10 +2,13 @@
 import csv
 import json
 import os
-
+import pandas as pd
+import matplotlib.pyplot as plt
+import hmf_djerba.plugins.hmf.genomic_landscape.constants as glc
 from djerba.util.logger import logger
 from djerba.util.subprocess_runner import subprocess_runner
 from djerba.util.validator import path_validator
+from djerba.util.image_to_base64 import converter
 
 class hrd_processor(logger):
 
@@ -73,14 +76,43 @@ class hrd_processor(logger):
         mainType = tree_info_on_this_code.pop()['mainType']
         return mainType
 
-    def make_HRD_plot(self, output_dir):
-        args = [
-            os.path.join(os.path.dirname(__file__),'Rscripts/hrd_plot.R'),
-            '--dir', output_dir,
-            '--cutoff', str(self.HRD_CUTOFF)
-        ]
-        pwgs_results = subprocess_runner(self.log_level, self.log_path).run(args)
-        return pwgs_results.stdout.split('"')[1]
+    def make_HRD_plot(self, work_dir, hrd_score):
+        """
+        Takes the HRD probability score as input.
+        This will plot a red dot.
+        Potentially to-do: add BRCA1/BRCA2 probability scores?
+        Writes the graph to a png; does not return anything.
+        """
+
+        # Get output name
+        output = os.path.join(work_dir, glc.HRD_PLOT_FILENAME)
+
+        # Set up plot aesthetics
+        fig, ax = plt.subplots(figsize=(4, 1))
+        x_ticks = [0.00, 0.25, 0.50, 0.75, 1.00]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.set_xticks(x_ticks)
+        ax.tick_params(axis='x', labelsize=6)
+        ax.get_yaxis().set_visible(False)
+
+        # Plot red dot
+        ax.plot(hrd_score, 0.5, 'ro', markersize=3)
+
+        # Plot basics: threshold, HR-P and HR-D labels
+        ax.axvline(x=0.50, color='grey', linestyle='--', linewidth=0.8)
+        ax.text(0.35, 0.85, 'HR-P', color='gray', fontsize=6, ha='center')
+        ax.text(0.85, 0.85, 'HR-D', color='gray', fontsize=6, ha='center')
+
+        # Get rid of borders (matches old Rscript plot look)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+
+        plt.tight_layout()
+        plt.savefig(output, format="png", dpi=300, bbox_inches='tight', backend='Cairo')
+
 
     def read_oncotree_main_type(self, oncotree_code, data_dir):
         """
@@ -91,20 +123,52 @@ class hrd_processor(logger):
         mainType = self.find_main_value_from_tree(oncotree_code, json_as_text)
         return(mainType)
 
+
+    def get_hrd_results(self, hrd_path):
+        """
+        Takes in CHORD results
+        Outputs the HRD probability score and the status as defined by CHORD
+        """
+
+        df = pd.read_csv(hrd_path, sep = '\t')
+        hrd_score = df["p_hrd"].iloc[0]
+        hrd_status = df["hr_status"].iloc[0]
+
+        return hrd_score, hrd_status
+
+    def convert_hrd_plot(self, work_dir):
+        """
+        Read VAF plot from file if it exists and return as a base64 string
+        Else, return False
+        """
+        image_converter = converter(self.log_level, self.log_path)
+        plot_path = os.path.join(work_dir, glc.HRD_PLOT_FILENAME)
+        if os.path.exists(os.path.join(work_dir, glc.HRD_PLOT_FILENAME)):
+            hrd_plot = image_converter.convert_png(plot_path, 'HRD plot')
+        else:
+            hrd_plot = None
+        return hrd_plot
+
     def run(self, work_dir, hrd_path):
         """
         Main HRD function, makes biomarker according to biomarker schema
         TODO: make official schema for biomarkers (with schema checks)
         """
-        hrd_data = self.write_hrd_quartiles(work_dir, hrd_path)
-        hrd_base64 = self.make_HRD_plot(work_dir)
-        if hrd_data["hrdetect_call"]["Probability.w"][1] > self.HRD_CUTOFF:
+        hrd_score, hrd_status = self.get_hrd_results(hrd_path)
+        self.make_HRD_plot(work_dir, hrd_score)
+        hrd_base64 = self.convert_hrd_plot(work_dir)
+        
+        if hrd_status == glc.HR_DEFICIENT:
             HRD_long = "Homologous Recombination Deficiency (HRD)"
             HRD_short = "HRD"
             actionable = True
-        else:
+        elif hrd_status == glc.HR_PROFICIENT:
             HRD_long = "Homologous Recombination Proficiency"
             HRD_short = "HR Proficient"
+            actionable = False
+        else:
+            HRD_long = "Undetermined"
+            HRD_short = "Undetermined"
             actionable = False
         results =  {
                 'Alteration': 'HRD',
@@ -113,24 +177,8 @@ class hrd_processor(logger):
                 'Genomic biomarker alteration': HRD_short,
                 'Genomic biomarker plot': hrd_base64,
                 'Genomic biomarker text': HRD_long,
-                'Genomic biomarker value': hrd_data["hrdetect_call"]["Probability.w"][1],
-                'QC' : hrd_data["QC"],
+                'Genomic biomarker value': hrd_score,
             }
         return results
-
-    def write_hrd_quartiles(self, work_dir, hrd_path):
-        """
-        Reads JSON from hrDetect and writes quartiles file for R plotting
-        """
-        self.validator.validate_output_dir(work_dir)
-        self.validator.validate_input_file(hrd_path)
-        with open(hrd_path) as f:
-            hrd_data = json.load(f)
-        out_path = os.path.join(work_dir, 'hrd.tmp.txt')
-        with open(out_path, 'w') as out_file:
-            for row in hrd_data["hrdetect_call"]:
-                quartiles = hrd_data["hrdetect_call"][row]
-                print("\t".join((row,"\t".join([str(item) for item in list(quartiles)]))), file=out_file)
-        return hrd_data
 
 

@@ -7,14 +7,14 @@ import re
 
 import djerba.core.constants as core_constants
 import djerba.plugins.sample.constants as sample_constants
-import djerba.plugins.genomic_landscape.constants as glc
+import hmf_djerba.plugins.hmf.genomic_landscape.constants as glc
 import djerba.plugins.wgts.cnv_purple.constants as purple_constants
 import djerba.util.oncokb.constants as oncokb_constants
 from djerba.helpers.input_params_helper.helper import main as input_params_helper
 from djerba.mergers.treatment_options_merger.factory import factory as tom_factory
 from djerba.plugins.base import plugin_base
 from djerba.plugins.genomic_landscape.ctdna import ctdna_processor
-from djerba.plugins.genomic_landscape.hrd import hrd_processor
+from hmf_djerba.plugins.hmf.genomic_landscape.hrd import hrd_processor
 from djerba.plugins.genomic_landscape.msi import msi_processor
 from djerba.plugins.genomic_landscape.tmb import tmb_processor
 from djerba.util.environment import directory_finder
@@ -52,7 +52,7 @@ class main(plugin_base):
             glc.PURITY_INPUT,
             glc.MSI_FILE,
             glc.CTDNA_FILE,
-            glc.HRDETECT_PATH,
+            glc.CHORD_PATH,
             glc.SAMPLE_TYPE
         ]
         for key in discovered:
@@ -90,7 +90,7 @@ class main(plugin_base):
         w = self.update_wrapper_if_null(w, dsi, glc.TUMOUR_ID)
         w = self.update_wrapper_if_null(w, dpi, glc.MSI_FILE, glc.MSI_WORKFLOW)
         w = self.update_wrapper_if_null(w, dpi, glc.CTDNA_FILE, glc.CTDNA_WORKFLOW)
-        w = self.update_wrapper_if_null(w, dpi, glc.HRDETECT_PATH, glc.HRD_WORKFLOW)
+        w = self.update_wrapper_if_null(w, dpi, glc.CHORD_PATH, glc.HRD_WORKFLOW)
         w = self.set_ctdna_file(w, dpi)
         return w.get_config()
 
@@ -133,7 +133,7 @@ class main(plugin_base):
         hrd = hrd_processor(self.log_level, self.log_path)
         results[glc.BIOMARKERS][glc.HRD] = hrd.run(
             work_dir,
-            wrapper.get_my_string(glc.HRDETECT_PATH)
+            wrapper.get_my_string(glc.CHORD_PATH)
         )
         results[glc.BIOMARKERS][glc.MSI] = msi_processor(self.log_level, self.log_path).run(
             work_dir,
