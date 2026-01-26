@@ -16,6 +16,7 @@ UNKNOWN_SAMPLE_TYPE = 'Unknown sample type'
 # Constants for render
 PURITY_REASON = 'purity'
 COVERAGE_REASON = 'coverage'
+CHORD_REASON = 'chord'
 
 # biomarker reportability
 CAN_REPORT_HRD = 'can_report_hrd'

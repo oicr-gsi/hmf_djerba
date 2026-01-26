@@ -2,6 +2,7 @@
 import csv
 import json
 import os
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import hmf_djerba.plugins.hmf.genomic_landscape.constants as glc
@@ -131,10 +132,11 @@ class hrd_processor(logger):
         """
 
         df = pd.read_csv(hrd_path, sep = '\t')
-        hrd_score = df["p_hrd"].iloc[0]
+        hrd_score = float(df["p_hrd"].iloc[0])
         hrd_status = df["hr_status"].iloc[0]
+        hrd_remarks = str(df["remarks_hr_status"].iloc[0])
 
-        return hrd_score, hrd_status
+        return hrd_score, hrd_status, hrd_remarks
 
     def convert_hrd_plot(self, work_dir):
         """
@@ -149,27 +151,52 @@ class hrd_processor(logger):
             hrd_plot = None
         return hrd_plot
 
+    def convert_hrd_remarks(self, hrd_remarks):
+        """
+        HRD remarks for the undetermined HRD case are given as:
+        
+        CHORD requires >=100 indels to accurately determine whether a sample is HRD. If this criterion is not met, hr_status will be cannot_be_determined and remarks_hr_status will be "<50 indels".
+    
+        CHORD cannot be applied to MSI samples. If an MSI sample is detected, hr_status will be cannot_be_determined and remarks_hr_status will be "Has MSI (>14000 indel.rep)"
+    
+        CHORD requires >=30 SVs to accurately determine HRD subtype. If this criterion is not met, hrd_type will be cannot_be_determined, and remarks_hr_status will be "<30 SVs."
+
+        So this function will take the text given and convert it to text that's appropriate to display.
+
+        """
+
+        dictionary = {"<50 indels": "sample has <50 indels", \
+                      "Has MSI (>14000 indel.rep)": "sample has MSI", \
+                      "<30 SVs": "sample has <30 SVs"}
+
+        # Default to "Unknown" as a reason if it's something else:
+        conversion = dictionary.get(hrd_remarks, "Unknown")
+        return conversion
+
     def run(self, work_dir, hrd_path):
         """
         Main HRD function, makes biomarker according to biomarker schema
         TODO: make official schema for biomarkers (with schema checks)
         """
-        hrd_score, hrd_status = self.get_hrd_results(hrd_path)
-        self.make_HRD_plot(work_dir, hrd_score)
-        hrd_base64 = self.convert_hrd_plot(work_dir)
-        
-        if hrd_status == glc.HR_DEFICIENT:
-            HRD_long = "Homologous Recombination Deficiency (HRD)"
-            HRD_short = "HRD"
-            actionable = True
-        elif hrd_status == glc.HR_PROFICIENT:
-            HRD_long = "Homologous Recombination Proficiency"
-            HRD_short = "HR Proficient"
-            actionable = False
+        hrd_score, hrd_status, hrd_remarks = self.get_hrd_results(hrd_path)
+
+        if hrd_status in [glc.HR_DEFICIENT, glc.HR_PROFICIENT]:
+            if hrd_status == glc.HR_DEFICIENT:
+                HRD_long = "Homologous Recombination Deficiency (HRD)"
+                HRD_short = "HRD"
+                actionable = True
+            elif hrd_status == glc.HR_PROFICIENT:
+                HRD_long = "Homologous Recombination Proficiency"
+                HRD_short = "HR Proficient"
+                actionable = False
+            self.make_HRD_plot(work_dir, hrd_score)
+            hrd_base64 = self.convert_hrd_plot(work_dir)
         else:
-            HRD_long = "Undetermined"
+            HRD_long = self.convert_hrd_remarks(hrd_remarks)
             HRD_short = "Undetermined"
             actionable = False
+            hrd_base64 = "Not Applicable"
+
         results =  {
                 'Alteration': 'HRD',
                 'Alteration_URL': '',
