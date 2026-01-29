@@ -39,12 +39,20 @@ class html_builder:
                     self.logger.error(msg)
                     raise ValueError(msg)
                     
-            elif marker == "MSI" and not can_report_msi:
-                cells = [
-                    hb.td(info[constants.ALT]),
-                    hb.td("NA"),
-                    hb.td("Cancer cell content below threshold to call MS score; must be &#8805;50&#37;")
-                ]
+            elif marker == "MSI":
+                if not can_report_msi:
+                    cells = [
+                        hb.td(info[constants.ALT]),
+                        hb.td("NA"),
+                        hb.td("Cancer cell content below threshold to call MS score; must be &#8805;50&#37;")
+                    ]
+                else:
+                    cells = [
+                        hb.td(info[constants.ALT]),
+                        hb.td(info[constants.METRIC_ALTERATION]),
+                        hb.td(info[constants.METRIC_TEXT])
+                    ]
+
             else:
                 cells = [
                     hb.td(info[constants.ALT]),
