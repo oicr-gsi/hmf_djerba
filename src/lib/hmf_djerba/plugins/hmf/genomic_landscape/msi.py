@@ -6,7 +6,8 @@ List of functions to convert MSI information into json format.
 import csv
 import os
 
-import numpy
+import numpy as np
+import matplotlib.pyplot as plt
 
 import hmf_djerba.plugins.hmf.genomic_landscape.constants as constants
 from djerba.util.image_to_base64 import converter
@@ -67,6 +68,9 @@ class msi_processor(logger):
         msi_value, msi_status = self.extract_MSI(work_dir, msi_summary)
         msi_dict = self.call_MSI(msi_value, msi_status)
         
+        msi_plot_location = self.write_biomarker_plot(work_dir, msi_value, "msi")
+        msi_dict[constants.METRIC_PLOT] = converter().convert_svg(msi_plot_location, 'MSI plot')
+
         return msi_dict
 
     def call_MSI(self, msi_value, msi_status):
@@ -83,7 +87,7 @@ class msi_processor(logger):
             elif msi_status == "UNKNOWN":
                 msi_dict[constants.METRIC_ACTIONABLE] = False
                 msi_dict[constants.METRIC_ALTERATION] = "UNKNOWN"
-                msi_dict[constants.METRIC_TEXT] = "Unknown Microsatellite Instability status"
+                msi_dict[constants.METRIC_TEXT] = "Unknown Microsatellite Instability Status"
             elif msi_status == "MSS":
                 msi_dict[constants.METRIC_ACTIONABLE] = False
                 msi_dict[constants.METRIC_ALTERATION] = "MSS"
@@ -116,3 +120,49 @@ class msi_processor(logger):
                     raise RuntimeError(msg) from err
         return msi_value, msi_status
 
+    def write_biomarker_plot(self, work_dir, msi_value, marker):
+        out_path = os.path.join(work_dir, marker + '.svg')
+        
+        msi_value = float(msi_value)
+        msi_cutoff = 0.4
+
+        # Create the plot and the background and x label
+        fig, ax = plt.subplots(figsize=(4, 1.1))
+        ax.set_facecolor("#f3f3f3")
+        fig.patch.set_facecolor("#f3f3f3")
+        ax.set_xlabel("Microsatellite indels per Mb", fontsize=7, color='black', labelpad=1)
+
+        # Set x and y axis
+        ax.set_xscale("log")
+        ax.set_xlim(min(msi_value, msi_cutoff)*0.3, max(msi_value, msi_cutoff)*2)
+        ticks = np.array([msi_value, msi_cutoff, max(msi_value, msi_cutoff)*2])
+        ax.set_xticks(ticks)
+        ax.xaxis.set_minor_locator(plt.NullLocator())
+        ax.set_xticklabels([f"{v}" for v in ticks], fontsize=6)
+        ax.set_ylim(0, 1)
+        ax.get_yaxis().set_visible(False)
+
+        # Plot red dot
+        # ax.plot(msi_value, 0.5, 'ro', markersize=3)
+
+        ax.plot(msi_value, 0.5, marker='o', markersize=9.5, color='red', markeredgewidth=0.5, markerfacecolor='none', clip_on=False)
+        ax.plot(msi_value, 0.5, marker='o', markersize=2.2, color='red', clip_on=False)
+        ax.text(msi_value, 0.3, "This Sample", color='red', fontsize=5.5, ha='center', va='top', clip_on=False)
+
+        # Plot basics: threshold, MSS and MSI labels
+        ax.axvline(x=msi_cutoff, color='grey', linestyle='--', linewidth=0.8)
+        ax.text(msi_cutoff * 0.3, 0.85, 'MSS', color='gray', fontsize=6, ha='center')
+        ax.text(msi_cutoff * 1.7, 0.85, 'MSI', color='gray', fontsize=6, ha='center')
+
+        # Get rid of borders (matches old Rscript plot look)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+
+        plt.tight_layout()
+        plt.savefig(out_path, format="svg", bbox_inches='tight')
+
+        self.logger.info("Wrote msi plot to {0}".format(out_path))
+
+        return out_path
