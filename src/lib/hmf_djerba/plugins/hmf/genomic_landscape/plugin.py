@@ -15,7 +15,7 @@ from djerba.mergers.treatment_options_merger.factory import factory as tom_facto
 from djerba.plugins.base import plugin_base
 from djerba.plugins.genomic_landscape.ctdna import ctdna_processor
 from hmf_djerba.plugins.hmf.genomic_landscape.hrd import hrd_processor
-from djerba.plugins.genomic_landscape.msi import msi_processor
+from hmf_djerba.plugins.hmf.genomic_landscape.msi import msi_processor
 from djerba.plugins.genomic_landscape.tmb import tmb_processor
 from djerba.util.environment import directory_finder
 from djerba.util.oncokb.annotator import annotator_factory
@@ -138,13 +138,14 @@ class main(plugin_base):
             results[glc.CTDNA] = ctdna_proc.get_dummy_results()
         else:
             results[glc.CTDNA] = ctdna_proc.run(ctdna_file)
+        
         results[glc.BIOMARKERS][glc.MSI] = msi_processor(self.log_level, self.log_path).run(
             work_dir,
-            r_script_dir,
             wrapper.get_my_string(glc.MSI_FILE),
             biomarkers_path,
             tumour_id
         )
+
         # Annotate genomic biomarkers for therapy info/merge inputs
         annotated_maf = self.annotate_oncokb(work_dir, wrapper)
         merge_inputs = self.get_oncokb_merge_inputs(annotated_maf, msi_ok)
