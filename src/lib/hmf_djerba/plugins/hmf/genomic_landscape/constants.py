@@ -16,6 +16,7 @@ UNKNOWN_SAMPLE_TYPE = 'Unknown sample type'
 # Constants for render
 PURITY_REASON = 'purity'
 COVERAGE_REASON = 'coverage'
+CHORD_REASON = 'chord'
 
 # biomarker reportability
 CAN_REPORT_HRD = 'can_report_hrd'
@@ -96,4 +97,7 @@ HRD = 'HRD'
 HRD_short = 'HRD_short'
 HRD_long = 'HRD_long'
 HRD_PLOT = 'hrd_base64'
-HRDETECT_PATH = 'hrd_path'
+CHORD_PATH = 'hrd_path'
+HR_DEFICIENT = 'HR_deficient'
+HR_PROFICIENT = 'HR_proficient'
+HRD_PLOT_FILENAME = 'HRD_plot' 

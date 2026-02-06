@@ -1,8 +1,9 @@
 
-import djerba.plugins.genomic_landscape.constants as constants
+import hmf_djerba.plugins.hmf.genomic_landscape.constants as constants
 from djerba.util.html import html_builder as hb
 from markdown import markdown
 from string import Template
+from djerba.util.logger import logger
 
 class html_builder:
     
@@ -26,6 +27,12 @@ class html_builder:
                         hb.td(info[constants.ALT]),
                         hb.td("NA"),
                         hb.td("Coverage above threshold to evaluate HRD; must be &#8804;115X")
+                    ]
+                elif cant_report_hrd_reason == constants.CHORD_REASON:
+                    cells = [
+                        hb.td(info[constants.ALT]),
+                        hb.td("NA"),
+                        hb.td("HRD score could not be determined (reason: {0}).".format(info[constants.METRIC_TEXT]))
                     ]
                 else:
                     msg = "Cannot report HRD reason: {0}. The only valid reasons for HRD to not be reported are purity and coverage".format(cant_report_hrd_reason)
