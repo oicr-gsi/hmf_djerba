@@ -98,7 +98,9 @@ class hrd_processor(logger):
         ax.get_yaxis().set_visible(False)
 
         # Plot red dot
-        ax.plot(hrd_score, 0.5, 'ro', markersize=3)
+        ax.plot(hrd_score, 0.5, marker='o', markersize=9.5, color='red', markeredgewidth=0.5, markerfacecolor='none', clip_on=False)
+        ax.plot(hrd_score, 0.5, marker='o', markersize=2.2, color='red', clip_on=False)
+        ax.text(hrd_score, 0.3, "This Sample", color='red', fontsize=5.5, ha='center', va='top', clip_on=False)
 
         # Plot basics: threshold, HR-P and HR-D labels
         ax.axvline(x=0.50, color='grey', linestyle='--', linewidth=0.8)
