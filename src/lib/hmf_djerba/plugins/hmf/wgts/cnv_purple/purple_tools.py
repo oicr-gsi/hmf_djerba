@@ -25,7 +25,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-import djerba.plugins.wgts.cnv_purple.constants as pc
+import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as pc
 from djerba.util.logger import logger
 from djerba.util.environment import directory_finder
 from djerba.util.image_to_base64 import converter

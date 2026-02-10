@@ -8,7 +8,7 @@ import re
 import djerba.core.constants as core_constants
 import djerba.plugins.sample.constants as sample_constants
 import hmf_djerba.plugins.hmf.genomic_landscape.constants as glc
-import djerba.plugins.wgts.cnv_purple.constants as purple_constants
+import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as purple_constants
 import djerba.util.oncokb.constants as oncokb_constants
 from djerba.helpers.input_params_helper.helper import main as input_params_helper
 from djerba.mergers.treatment_options_merger.factory import factory as tom_factory

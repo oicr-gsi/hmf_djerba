@@ -6,12 +6,12 @@ a plugin for WGTS CNV, based on PURPLE
 import os
 
 import djerba.core.constants as core_constants
-import djerba.plugins.wgts.cnv_purple.constants as pc
+import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as pc
 import djerba.util.oncokb.constants as oc
 from djerba.helpers.input_params_helper.helper import main as iph
 from djerba.plugins.base import plugin_base, DjerbaPluginError
-from djerba.plugins.wgts.cnv_purple.legacy_tools import cnv_processor
-from djerba.plugins.wgts.cnv_purple.purple_tools import purple_processor
+from hmf_djerba.plugins.hmf.wgts.cnv_purple.legacy_tools import cnv_processor
+from hmf_djerba.plugins.hmf.wgts.cnv_purple.purple_tools import purple_processor
 from djerba.util.oncokb.annotator import annotator_factory
 from djerba.util.render_mako import mako_renderer
 
