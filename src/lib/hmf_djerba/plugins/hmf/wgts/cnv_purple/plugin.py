@@ -6,12 +6,12 @@ a plugin for WGTS CNV, based on PURPLE
 import os
 
 import djerba.core.constants as core_constants
-import djerba.plugins.wgts.cnv_purple.constants as pc
+import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as pc
 import djerba.util.oncokb.constants as oc
 from djerba.helpers.input_params_helper.helper import main as iph
 from djerba.plugins.base import plugin_base, DjerbaPluginError
-from djerba.plugins.wgts.cnv_purple.legacy_tools import cnv_processor
-from djerba.plugins.wgts.cnv_purple.purple_tools import purple_processor
+from hmf_djerba.plugins.hmf.wgts.cnv_purple.legacy_tools import cnv_processor
+from hmf_djerba.plugins.hmf.wgts.cnv_purple.purple_tools import purple_processor
 from djerba.util.oncokb.annotator import annotator_factory
 from djerba.util.render_mako import mako_renderer
 
@@ -37,11 +37,14 @@ class main(plugin_base):
             wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.TUMOUR_ID
         )
         wrapper = self.update_wrapper_if_null(
-            wrapper, core_constants.DEFAULT_PATH_INFO, pc.PURPLE_ZIP, pc.PURPLE
+            wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.NORMAL_ID)
+
+        wrapper = self.update_wrapper_if_null(
+            wrapper, core_constants.DEFAULT_PATH_INFO, pc.PURPLE_DIR, pc.PURPLE
         )
         work_dir = self.workspace.get_work_dir()
         processor = purple_processor(work_dir, self.log_level, self.log_path)
-        purity_ploidy = processor.read_purity_ploidy(wrapper.get_my_string(pc.PURPLE_ZIP))
+        purity_ploidy = processor.read_purity_ploidy(wrapper.get_my_string(pc.PURPLE_DIR))
         self.workspace.write_json(pc.PURITY_PLOIDY, purity_ploidy)
         self.logger.debug("Wrote purity/ploidy to workspace: {0}".format(purity_ploidy))
         return wrapper.get_config()
@@ -54,13 +57,14 @@ class main(plugin_base):
         self.logger.debug("Read purity/ploidy from workspace: {0}".format(purity_ploidy))
         ploidy = purity_ploidy[pc.PLOIDY]
         tumour_id = wrapper.get_my_string(core_constants.TUMOUR_ID)
+        normal_id = wrapper.get_my_string(core_constants.NORMAL_ID)
 
         # process purple files
         self.logger.debug("Starting purple data processing")
         plot9_verbose = wrapper.get_my_boolean(pc.PLOTNINE_VERBOSE)
         processor = purple_processor(work_dir, self.log_level, self.log_path, plot9_verbose)
-        self.logger.debug("Extracting files from ZIP archive")
-        purple_files = processor.unzip_purple(wrapper.get_my_string(pc.PURPLE_ZIP))
+        self.logger.debug("Finding PURPLE files in directory")
+        purple_files = processor.find_purple_files(wrapper.get_my_string(pc.PURPLE_DIR))
         self.logger.debug("Evaluating purity fit")
         processor.consider_purity_fit(purple_files[pc.PURPLE_PURITY_RANGE])
         self.logger.debug("Converting data format")
@@ -81,7 +85,10 @@ class main(plugin_base):
         if os.path.exists(os.path.join(work_dir, core_constants.DEFAULT_PATH_INFO)):
             self.logger.debug("Writing alternate solutions JSON")
             purple_alternate = processor.write_purple_alternate_launcher(
-                self.workspace.read_json(core_constants.DEFAULT_PATH_INFO))
+                self.workspace.read_json(core_constants.DEFAULT_PATH_INFO),
+                wrapper.get_my_string(pc.PURPLE_DIR),
+                normal_id,
+                tumour_id)
             self.workspace.write_json(pc.PURPLE_ALT, purple_alternate)
         else:
             self.logger.debug("Omitting alternate solutions (path info not available)")
@@ -108,9 +115,10 @@ class main(plugin_base):
         discovered = [
             iph.ASSAY,
             core_constants.TUMOUR_ID,
+            core_constants.NORMAL_ID,
             oc.ONCOTREE_CODE,
             pc.WHIZBAM_PROJECT,
-            pc.PURPLE_ZIP
+            pc.PURPLE_DIR
         ]
         for key in discovered:
             self.add_ini_discovered(key)

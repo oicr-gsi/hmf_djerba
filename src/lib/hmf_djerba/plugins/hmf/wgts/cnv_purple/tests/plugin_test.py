@@ -12,7 +12,7 @@ import string
 
 from djerba.util.validator import path_validator
 from djerba.plugins.plugin_tester import PluginTester
-import djerba.plugins.wgts.cnv_purple.plugin as cnv
+import hmf_djerba.plugins.hmf.wgts.cnv_purple.plugin as cnv
 from djerba.core.workspace import workspace
 from djerba.util.environment import directory_finder
 

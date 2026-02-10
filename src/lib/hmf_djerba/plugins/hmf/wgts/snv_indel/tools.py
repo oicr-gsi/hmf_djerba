@@ -14,7 +14,7 @@ import seaborn as sns
 import numpy as np
 import logging
 import djerba.core.constants as core_constants
-import djerba.plugins.wgts.cnv_purple.legacy_constants as cnv_constants
+import hmf_djerba.plugins.hmf.wgts.cnv_purple.legacy_constants as cnv_constants
 import djerba.plugins.wgts.snv_indel.constants as sic
 from djerba.mergers.gene_information_merger.factory import factory as gim_factory
 from djerba.mergers.treatment_options_merger.factory import factory as tom_factory
