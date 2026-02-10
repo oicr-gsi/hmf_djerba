@@ -16,6 +16,7 @@ UNKNOWN_SAMPLE_TYPE = 'Unknown sample type'
 # Constants for render
 PURITY_REASON = 'purity'
 COVERAGE_REASON = 'coverage'
+CHORD_REASON = 'chord'
 
 # biomarker reportability
 CAN_REPORT_HRD = 'can_report_hrd'
@@ -23,8 +24,8 @@ CAN_REPORT_MSI = 'can_report_msi'
 CANT_REPORT_HRD_REASON = 'cant_report_hrd_reason'
 
 # For MSI file
-MSI_RESULTS_SUFFIX = '.recalibrated.msi.booted'
-MSI_WORKFLOW = 'msisensor'
+MSI_RESULTS_SUFFIX = '.purple.purity.tsv'
+MSI_WORKFLOW = 'purple'
 
 # For ctDNA file
 CTDNA_RESULTS_SUFFIX = 'SNP.count.txt'
@@ -61,9 +62,7 @@ METRIC_VALUE = 'Genomic biomarker value'
 MINIMUM_MAGNITUDE_SEG_MEAN = 0.2
 MRDETECT_FILTER_ONLY_FILE_NAME = 'SNP.count.txt'
 MSI = "MSI"
-MSI_CUTOFF = 15.0
 MSI_FILE_NAME = 'msi.txt'
-MSS_CUTOFF = 5.0
 MUTATIONS_EXTENDED = 'data_mutations_extended.txt'
 NA = 'NA'
 ONCOKB = 'OncoKB'
@@ -96,4 +95,7 @@ HRD = 'HRD'
 HRD_short = 'HRD_short'
 HRD_long = 'HRD_long'
 HRD_PLOT = 'hrd_base64'
-HRDETECT_PATH = 'hrd_path'
+CHORD_PATH = 'hrd_path'
+HR_DEFICIENT = 'HR_deficient'
+HR_PROFICIENT = 'HR_proficient'
+HRD_PLOT_FILENAME = 'HRD_plot' 
