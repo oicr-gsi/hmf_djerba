@@ -1,5 +1,7 @@
 """
 Utility classes for the fusions plugin
+
+Intended for Hartwig Isofox fusion data
 """
 
 import csv
@@ -19,7 +21,7 @@ from djerba.mergers.gene_information_merger.factory import factory as gim_factor
 from djerba.util.oncokb.annotator import annotator_factory
 from djerba.util.wgts.tools import wgts_tools
 from djerba.util.oncokb.tools import gene_summary_reader
-import djerba.plugins.fusion.constants as fc
+import hmf_djerba.plugins.hmf.fusion.constants as fc
 import djerba.core.constants as core_constants
 from djerba.util.subprocess_runner import subprocess_runner
 
@@ -33,6 +35,8 @@ class fusion_tools(logger):
         self.work_dir = work_dir
         self.df_fusions = self.get_fusions_df()
         self.df_fusions_indexed = self.df_fusions.copy().set_index('fusion_pairs')
+        # When creating the index, drop duplicates
+        # self.df_fusions_indexed = self.df_fusions_indexed[~self.df_fusions_indexed.index.duplicated(keep='first')]
         self.df_oncokb = self.get_oncokb_annotated_df()
         self.df_nccn = self.get_nccn_df()
 
@@ -53,12 +57,14 @@ class fusion_tools(logger):
         self.nccn_relevant_variants = len(self.df_nccn) # value used by self.get_fusion_objects()
         results[fc.TOTAL_VARIANTS] = self.get_total_variants()
 
+
         # Get all fusions, both OncoKB and NCCN fusions 
         fusions = self.get_fusion_objects()
 
         # If there are fusions...
         if len(fusions) > 0:
             outputs = self.fusions_to_json(fusions, oncotree_code)
+            
             [rows, gene_info, treatment_opts] = outputs
 
             # Sort by OncoKB level
@@ -69,6 +75,19 @@ class fusion_tools(logger):
             # Update the count to reflect what's actually in the table body.
             results[fc.CLINICALLY_RELEVANT_VARIANTS] = len(unique_fusions_in_body)
 
+            # Filter gene_info to only include reportable genes 
+            reportable_genes = set(    
+                gene
+                for fusion in unique_fusions_in_body
+                for gene in fusion.split("::")
+            )
+            
+            gene_info = [
+                gene_dict 
+                for gene_dict in gene_info
+                if gene_dict["Gene"] in reportable_genes
+            ]
+
             results[fc.BODY] = rows
         else:
             results[fc.BODY] = []
@@ -77,29 +96,29 @@ class fusion_tools(logger):
 
         return results, gene_info, treatment_opts 
 
-    def construct_whizbam_links(self, tsv_file_path, base_dir, fusion_dir, output_dir, json_template_path, unique_fusions, config, wrapper):
+    # def construct_whizbam_links(self, tsv_file_path, base_dir, fusion_dir, output_dir, json_template_path, unique_fusions, config, wrapper):
 
-        failed_fusions = 0
-        fusion_url_pairs = []
+    #     failed_fusions = 0
+    #     fusion_url_pairs = []
 
-        for fusion in unique_fusions:
-            try:
-                fusion, blurb_url = self.process_fusion(config, fusion, tsv_file_path, json_template_path, output_dir, wrapper)
-                fusion_url_pairs.append([fusion, blurb_url])
+    #     for fusion in unique_fusions:
+    #         try:
+    #             fusion, blurb_url = self.process_fusion(config, fusion, tsv_file_path, json_template_path, output_dir, wrapper)
+    #             fusion_url_pairs.append([fusion, blurb_url])
 
-            except FusionProcessingError as e:
-                self.logger.warning(f"Skipping fusion {fusion}: {e}")
-                failed_fusions += 1
+    #         except FusionProcessingError as e:
+    #             self.logger.warning(f"Skipping fusion {fusion}: {e}")
+    #             failed_fusions += 1
 
-        if failed_fusions > 0:
-            self.logger.warning(f"{failed_fusions} fusions failed out of {len(unique_fusions)}.")
+    #     if failed_fusions > 0:
+    #         self.logger.warning(f"{failed_fusions} fusions failed out of {len(unique_fusions)}.")
 
         # Save the fusion-URL pairs to a CSV file
-        output_tsv_path = os.path.join(output_dir, 'fusion_blurb_urls.tsv')
-        with open(output_tsv_path, 'w', newline='') as tsvfile:
-            writer = csv.writer(tsvfile, delimiter='\t')
-            writer.writerow(['Fusion', 'Whizbam URL'])
-            writer.writerows(fusion_url_pairs)
+        # output_tsv_path = os.path.join(output_dir, 'fusion_blurb_urls.tsv')
+        # with open(output_tsv_path, 'w', newline='') as tsvfile:
+        #     writer = csv.writer(tsvfile, delimiter='\t')
+        #     writer.writerow(['Fusion', 'Whizbam URL'])
+        #     writer.writerows(fusion_url_pairs)
 
     def get_oncokb_annotated_df(self):
         """
@@ -138,11 +157,12 @@ class fusion_tools(logger):
             """
 
             fusion_id_hyphen = row["Fusion"]
-            fusion_id = self.df_fusions_indexed.loc[fusion_id_hyphen, "fusion_pairs_reordered"]
+            fusion_id = fusion_id_hyphen.replace("-", "::")
             gene1 = fusion_id.split("::", 1)[0]
             gene2 = fusion_id.split("::", 1)[1]
-            reading_frame = self.df_fusions_indexed.loc[fusion_id_hyphen, "reading_frame_simple"]
-            event_type = self.df_fusions_indexed.loc[fusion_id_hyphen, "event_type_simple"]
+            # reading_frame = self.df_fusions_indexed.loc[fusion_id_hyphen, "phased"]
+            reading_frame = "NA"
+            event_type = self.df_fusions_indexed.loc[fusion_id_hyphen, "SVType"]
             
             if nccn == True:
                 effect = "Undetermined"
@@ -165,7 +185,6 @@ class fusion_tools(logger):
             )
 
             return fusion_object
-
 
         fusions = [] # Full list of all fusion results
         if self.clinically_relevant_variants != 0:
@@ -309,112 +328,112 @@ class fusion_tools(logger):
                     treatment_opts.extend(treatment_opt)
         return rows, gene_info, treatment_opts
     
-    def process_fusion(self, config, fusion, tsv_file_path, json_template_path, output_dir, wrapper):
+    # def process_fusion(self, config, fusion, tsv_file_path, json_template_path, output_dir, wrapper):
 
-        # Validate and parse the fusion format
-        match = re.match(r"(.+)::(.+)", fusion)
-        if not match:
-            msg = f"No valid fusion found for {fusion}. Ensure the format is gene1::gene2."
-            self.logger.error(msg)
-            raise FusionProcessingError(msg)
-        gene1, gene2 = match.groups()
+    #     # Validate and parse the fusion format
+    #     match = re.match(r"(.+)::(.+)", fusion)
+    #     if not match:
+    #         msg = f"No valid fusion found for {fusion}. Ensure the format is gene1::gene2."
+    #         self.logger.error(msg)
+    #         raise FusionProcessingError(msg)
+    #     gene1, gene2 = match.groups()
 
-        # Find breakpoints in the ARRIBA TSV file
-        breakpoint1, breakpoint2 = self.find_breakpoints(tsv_file_path, gene1, gene2)
-        if not (breakpoint1 and breakpoint2):
-            msg = f"No matching fusion found in the TSV file ({tsv_file_path}) for {fusion}."
-            self.logger.error(msg)
-            raise FusionProcessingError(msg)
+    #     # Find breakpoints in the ISOFOX TSV file
+    #     breakpoint1, breakpoint2 = self.find_breakpoints(tsv_file_path, gene1, gene2)
+    #     if not (breakpoint1 and breakpoint2):
+    #         msg = f"No matching fusion found in the TSV file ({tsv_file_path}) for {fusion}."
+    #         self.logger.error(msg)
+    #         raise FusionProcessingError(msg)
 
-        # Format breakpoints
-        formatted_breakpoint1 = whizbam_tools.format_breakpoint(breakpoint1)
-        formatted_breakpoint2 = whizbam_tools.format_breakpoint(breakpoint2)
+    #     # Format breakpoints
+    #     formatted_breakpoint1 = whizbam_tools.format_breakpoint(breakpoint1)
+    #     formatted_breakpoint2 = whizbam_tools.format_breakpoint(breakpoint2)
 
-        # Load the JSON template
-        with open(json_template_path, 'r') as json_file:
-            data = json.load(json_file)
+    #     # Load the JSON template
+    #     with open(json_template_path, 'r') as json_file:
+    #         data = json.load(json_file)
 
-        # Update the JSON with the formatted breakpoints
-        data['locus'] = [formatted_breakpoint1, formatted_breakpoint2]
+    #     # Update the JSON with the formatted breakpoints
+    #     data['locus'] = [formatted_breakpoint1, formatted_breakpoint2]
 
-        project_id = wrapper.get_my_string(core_constants.PROJECT)
-        tumour_id = wrapper.get_my_string(core_constants.TUMOUR_ID)
-        whizbam_project_id = wrapper.get_my_string(fc.WHIZBAM_PROJECT)
-        data['tracks'][1]['name'] = tumour_id
+    #     project_id = wrapper.get_my_string(core_constants.PROJECT)
+    #     tumour_id = wrapper.get_my_string(core_constants.TUMOUR_ID)
+    #     whizbam_project_id = wrapper.get_my_string(fc.WHIZBAM_PROJECT)
+    #     data['tracks'][1]['name'] = tumour_id
 
-        # Define file patterns
-        bam_project_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{project_id}/RNASEQ/{tumour_id}.bam"
-        bai_project_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{project_id}/RNASEQ/{tumour_id}.bai"
-        bam_whizbam_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{whizbam_project_id}/RNASEQ/{tumour_id}.bam"
-        bai_whizbam_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{whizbam_project_id}/RNASEQ/{tumour_id}.bai"
+    #     # Define file patterns
+    #     bam_project_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{project_id}/RNASEQ/{tumour_id}.bam"
+    #     bai_project_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{project_id}/RNASEQ/{tumour_id}.bai"
+    #     bam_whizbam_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{whizbam_project_id}/RNASEQ/{tumour_id}.bam"
+    #     bai_whizbam_path = f"{core_constants.WHIZBAM_PATTERN_ROOT}/{whizbam_project_id}/RNASEQ/{tumour_id}.bai"
 
-        # Resolve BAM file
-        bam_file, bam_project = None, None
-        if os.path.isfile(bam_project_path):
-            bam_file, bam_project = bam_project_path, project_id
-        elif os.path.isfile(bam_whizbam_path):
-            bam_file, bam_project = bam_whizbam_path, whizbam_project_id
-        else:
-            self.logger.warning(f"BAM file not found for {project_id}. Try adjusting whizbam_project_id in config file")
+    #     # Resolve BAM file
+    #     bam_file, bam_project = None, None
+    #     if os.path.isfile(bam_project_path):
+    #         bam_file, bam_project = bam_project_path, project_id
+    #     elif os.path.isfile(bam_whizbam_path):
+    #         bam_file, bam_project = bam_whizbam_path, whizbam_project_id
+    #     else:
+    #         self.logger.warning(f"BAM file not found for {project_id}. Try adjusting whizbam_project_id in config file")
 
-        if bam_file:
-            bam_filename = os.path.basename(bam_file)
-            data['tracks'][1]['url'] = f"/bams/project/{bam_project}/RNASEQ/file/{bam_filename}"
+    #     if bam_file:
+    #         bam_filename = os.path.basename(bam_file)
+    #         data['tracks'][1]['url'] = f"/bams/project/{bam_project}/RNASEQ/file/{bam_filename}"
 
-        # Resolve BAI file
-        bai_file, bai_project = None, None
-        if os.path.isfile(bai_project_path):
-            bai_file, bai_project = bai_project_path, project_id
-        elif os.path.isfile(bai_whizbam_path):
-            bai_file, bai_project = bai_whizbam_path, whizbam_project_id
-        else:
-            self.logger.warning(f"BAI file not found for {project_id}. Try adjusting whizbam_project_id in config file")
+    #     # Resolve BAI file
+    #     bai_file, bai_project = None, None
+    #     if os.path.isfile(bai_project_path):
+    #         bai_file, bai_project = bai_project_path, project_id
+    #     elif os.path.isfile(bai_whizbam_path):
+    #         bai_file, bai_project = bai_whizbam_path, whizbam_project_id
+    #     else:
+    #         self.logger.warning(f"BAI file not found for {project_id}. Try adjusting whizbam_project_id in config file")
 
-        if bai_file:
-            bai_filename = os.path.basename(bai_file)
-            data['tracks'][1]['indexURL'] = f"/bams/project/{bai_project}/RNASEQ/file/{bai_filename}"
+    #     if bai_file:
+    #         bai_filename = os.path.basename(bai_file)
+    #         data['tracks'][1]['indexURL'] = f"/bams/project/{bai_project}/RNASEQ/file/{bai_filename}"
 
-        # Write the modified JSON to the output directory
-        output_json_path = os.path.join(output_dir, f"{fusion}.json")
-        with open(output_json_path, 'w') as json_output_file:
-            json.dump(data, json_output_file)
+    #     # Write the modified JSON to the output directory
+    #     output_json_path = os.path.join(output_dir, f"{fusion}.json")
+    #     with open(output_json_path, 'w') as json_output_file:
+    #         json.dump(data, json_output_file)
 
-        # Compress JSON and generate blurb URL
-        with open(output_json_path, 'r') as json_output_file:
-            json_content = json_output_file.read()
-        compressed_b64_data = whizbam_tools.compress_string(json_content)
-        blurb_url = f"https://whizbam.oicr.on.ca/igv?sessionURL=blob:{compressed_b64_data}"
-        return fusion, blurb_url
+    #     # Compress JSON and generate blurb URL
+    #     with open(output_json_path, 'r') as json_output_file:
+    #         json_content = json_output_file.read()
+    #     compressed_b64_data = whizbam_tools.compress_string(json_content)
+    #     blurb_url = f"https://whizbam.oicr.on.ca/igv?sessionURL=blob:{compressed_b64_data}"
+    #     return fusion, blurb_url
 
-    def find_breakpoints(self, tsv_file_path, gene1, gene2):
-        # Find breakpoints for the given fusion genes in the arriba file
-        with open(tsv_file_path, mode='r') as file:
-            reader = csv.DictReader(file, delimiter='\t')
-            for row in reader:
-                if (row['#gene1'] == gene1 or row['#gene1'] == gene2) and (
-                        row['gene2'] == gene1 or row['gene2'] == gene2):
-                    return row['breakpoint1'], row['breakpoint2']
-        return None, None
+    # def find_breakpoints(self, tsv_file_path, gene1, gene2):
+    #     # Find breakpoints for the given fusion genes in the isofox file
+    #     with open(tsv_file_path, mode='r') as file:
+    #         reader = csv.DictReader(file, delimiter='\t')
+    #         for row in reader:
+    #             if (row['#gene1'] == gene1 or row['#gene1'] == gene2) and (
+    #                     row['gene2'] == gene1 or row['gene2'] == gene2):
+    #                 return row['breakpoint1'], row['breakpoint2']
+    #     return None, None
 
-class whizbam_tools:
+# class whizbam_tools:
 
-    @staticmethod
-    def format_breakpoint(breakpoint):
-        # Format breakpoint into 'chr:start-end' format
-        chrom, pos = breakpoint.split(':')
-        start = int(pos)
-        return f"{chrom}:{start}-{start + 1}"
+#     @staticmethod
+#     def format_breakpoint(breakpoint):
+#         # Format breakpoint into 'chr:start-end' format
+#         chrom, pos = breakpoint.split(':')
+#         start = int(pos)
+#         return f"{chrom}:{start}-{start + 1}"
     
-    @staticmethod
-    def compress_string(input_string):
-        # Convert string to bytes
-        input_bytes = input_string.encode(core_constants.TEXT_ENCODING)
-        # Compress using raw deflate (no zlib header)
-        compressed_bytes = zlib.compress(input_bytes, level=9)[2:-4]  # Removing zlib headers and checksum
-        # Encode compressed bytes to base64
-        compressed_base64 = base64.b64encode(compressed_bytes)
-        # Convert the base64 bytes to a string and apply the replacements
-        return compressed_base64.decode(core_constants.TEXT_ENCODING)
+#     @staticmethod
+#     def compress_string(input_string):
+#         # Convert string to bytes
+#         input_bytes = input_string.encode(core_constants.TEXT_ENCODING)
+#         # Compress using raw deflate (no zlib header)
+#         compressed_bytes = zlib.compress(input_bytes, level=9)[2:-4]  # Removing zlib headers and checksum
+#         # Encode compressed bytes to base64
+#         compressed_base64 = base64.b64encode(compressed_bytes)
+#         # Convert the base64 bytes to a string and apply the replacements
+#         return compressed_base64.decode(core_constants.TEXT_ENCODING)
 
 
 class fusion:

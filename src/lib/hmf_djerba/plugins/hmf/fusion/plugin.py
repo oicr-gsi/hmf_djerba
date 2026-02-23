@@ -1,5 +1,8 @@
 """
 Plugin to generate the Fusions report section
+
+Intended for Hartwig ISOFOX fusion data
+(whizbam link section is commented out for further details)
 """
 
 import csv
@@ -8,15 +11,15 @@ import os
 import re
 import json
 from djerba.plugins.base import plugin_base, DjerbaPluginError
-from djerba.plugins.fusion.tools import fusion_tools
-from djerba.plugins.fusion.preprocess import prepare_fusions
+from hmf_djerba.plugins.hmf.fusion.tools import fusion_tools
+from hmf_djerba.plugins.hmf.fusion.preprocess import prepare_fusions
 from djerba.util.environment import directory_finder
 from djerba.util.logger import logger
 from djerba.util.oncokb.tools import levels as oncokb_levels
 from djerba.util.render_mako import mako_renderer
 import djerba.core.constants as core_constants
 import djerba.util.oncokb.constants as oncokb
-import djerba.plugins.fusion.constants as fc
+import hmf_djerba.plugins.hmf.fusion.constants as fc
 
 class FusionProcessingError(Exception):
     pass
@@ -29,8 +32,7 @@ class main(plugin_base):
     def configure(self, config):
         config = self.apply_defaults(config)
         wrapper = self.get_config_wrapper(config)
-        wrapper = self.update_file_if_null(wrapper, fc.ARRIBA_PATH, 'arriba')
-        wrapper = self.update_file_if_null(wrapper, fc.MAVIS_PATH, 'mavis')
+        wrapper = self.update_file_if_null(wrapper, fc.ISOFOX_PATH, 'isofox')
         work_dir = self.workspace.get_work_dir()
         self.update_wrapper_if_null(wrapper, core_constants.DEFAULT_SAMPLE_INFO, fc.WHIZBAM_PROJECT, 'project')
         self.update_wrapper_if_null(wrapper, 'input_params.json', fc.ONCOTREE_CODE, 'oncotree_code')
@@ -56,21 +58,21 @@ class main(plugin_base):
         data[core_constants.MERGE_INPUTS]['treatment_options_merger'] = treatment_opts
 
         # Processing fusions and generating blob URLs
-        tsv_file_path = wrapper.get_my_string(fc.ARRIBA_PATH)
+        tsv_file_path = wrapper.get_my_string(fc.ISOFOX_PATH)
         base_dir = (directory_finder(self.log_level, self.log_path).get_base_dir())
         fusion_dir = os.path.join(base_dir, "plugins", "fusion")
         json_template_path = os.path.join(fusion_dir, fc.JSON_TO_BE_COMPRESSED)
         output_dir = self.workspace.get_work_dir()
         unique_fusions = list({item["fusion"] for item in results[fc.BODY]})
         wrapper = self.get_config_wrapper(config)
-        fus_tools.construct_whizbam_links(tsv_file_path, base_dir, fusion_dir, output_dir, json_template_path, unique_fusions, config, wrapper)
+        # fus_tools.construct_whizbam_links(tsv_file_path, base_dir, fusion_dir, output_dir, json_template_path, unique_fusions, config, wrapper)
+
         return data  
 
     def specify_params(self):
         discovered = [
             core_constants.PROJECT,
-            fc.MAVIS_PATH,
-            fc.ARRIBA_PATH,
+            fc.ISOFOX_PATH,
             core_constants.TUMOUR_ID,
             fc.ONCOTREE_CODE,
             fc.WHIZBAM_PROJECT
@@ -79,7 +81,9 @@ class main(plugin_base):
             self.add_ini_discovered(key)
         # set defaults
         data_dir = directory_finder(self.log_level, self.log_path).get_data_dir()
-        self.set_ini_default(fc.MIN_FUSION_READS, 20)
+        
+        # Set MIN_FUSION_READS after validation!!!!!
+        self.set_ini_default(fc.MIN_FUSION_READS, 0)
         self.set_ini_default(oncokb.APPLY_CACHE, False)
         self.set_ini_default(oncokb.UPDATE_CACHE, False)
         self.set_ini_default(oncokb.ONCOKB_CACHE, self.CACHE_DEFAULT)

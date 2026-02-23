@@ -2,7 +2,7 @@
 
 import re
 import djerba.core.constants as core_constants
-import djerba.plugins.fusion.constants as plugin
+import hmf_djerba.plugins.hmf.fusion.constants as plugin
 from djerba.util.html import html_builder as hb
 from djerba.util.oncokb.tools import levels as oncokb_levels
 
