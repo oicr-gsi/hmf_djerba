@@ -131,10 +131,16 @@ class msi_processor(logger):
         ax.set_facecolor("#f3f3f3")
         fig.patch.set_facecolor("#f3f3f3")
         ax.set_xlabel("Microsatellite indels per Mb", fontsize=7, color='black', labelpad=1)
+        
+        # Calculate axis limits and visual centers on log scale of msi and mss
+        lower_lim = min(msi_value, msi_cutoff) * 0.3
+        upper_lim = max(msi_value, msi_cutoff) * 2
+        mss_center = np.sqrt(lower_lim * msi_cutoff)
+        msi_center = np.sqrt(msi_cutoff * upper_lim)
 
         # Set x and y axis
         ax.set_xscale("log")
-        ax.set_xlim(min(msi_value, msi_cutoff)*0.3, max(msi_value, msi_cutoff)*2)
+        ax.set_xlim(lower_lim, upper_lim)
         ticks = np.array([msi_value, msi_cutoff, max(msi_value, msi_cutoff)*2])
         ax.set_xticks(ticks)
         ax.xaxis.set_minor_locator(plt.NullLocator())
@@ -142,18 +148,17 @@ class msi_processor(logger):
         ax.set_ylim(0, 1)
         ax.get_yaxis().set_visible(False)
 
+        # Plot basics: threshold, MSS and MSI labels
+        ax.plot([msi_cutoff, msi_cutoff], [0, 1], color='grey', linestyle='--', linewidth=1.0, clip_on=False)
+        ax.text(mss_center, 0.85, 'MSS', color='gray', fontsize=6, ha='center')
+        ax.text(msi_center, 0.85, 'MSI', color='gray', fontsize=6, ha='center')
+        
         # Plot red dot
         # ax.plot(msi_value, 0.5, 'ro', markersize=3)
-
         ax.plot(msi_value, 0.5, marker='o', markersize=9.5, color='red', markeredgewidth=0.5, markerfacecolor='none', clip_on=False)
         ax.plot(msi_value, 0.5, marker='o', markersize=2.2, color='red', clip_on=False)
         ax.text(msi_value, 0.3, "This Sample", color='red', fontsize=5.5, ha='center', va='top', clip_on=False)
-
-        # Plot basics: threshold, MSS and MSI labels
-        ax.axvline(x=msi_cutoff, color='grey', linestyle='--', linewidth=0.8)
-        ax.text(msi_cutoff * 0.3, 0.85, 'MSS', color='gray', fontsize=6, ha='center')
-        ax.text(msi_cutoff * 1.7, 0.85, 'MSI', color='gray', fontsize=6, ha='center')
-
+        
         # Get rid of borders (matches old Rscript plot look)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
