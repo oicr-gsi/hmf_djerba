@@ -89,12 +89,15 @@ class hrd_processor(logger):
         output = os.path.join(work_dir, glc.HRD_PLOT_FILENAME)
 
         # Set up plot aesthetics
-        fig, ax = plt.subplots(figsize=(4, 1))
-        x_ticks = [0.00, 0.25, 0.50, 0.75, 1.00]
+        fig, ax = plt.subplots(figsize=(4, 1.1))
+        ax.set_xlabel("Probability of HRD", fontsize=7, color='black', labelpad=1)
+
+        x_ticks = [hrd_score, 0.25, 0.50, 0.75, 1.00]
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
         ax.set_xticks(x_ticks)
-        ax.tick_params(axis='x', labelsize=6)
+        ax.xaxis.set_minor_locator(plt.NullLocator())
+        ax.set_xticklabels([f"{v:.2f}" for v in x_ticks], fontsize=6)
         ax.get_yaxis().set_visible(False)
 
         # Plot red dot
@@ -104,8 +107,8 @@ class hrd_processor(logger):
 
         # Plot basics: threshold, HR-P and HR-D labels
         ax.axvline(x=0.50, color='grey', linestyle='--', linewidth=0.8)
-        ax.text(0.35, 0.85, 'HR-P', color='gray', fontsize=6, ha='center')
-        ax.text(0.85, 0.85, 'HR-D', color='gray', fontsize=6, ha='center')
+        ax.text(0.25, 0.85, 'HR-P', color='gray', fontsize=6, ha='center')
+        ax.text(0.75, 0.85, 'HR-D', color='gray', fontsize=6, ha='center')
 
         # Get rid of borders (matches old Rscript plot look)
         ax.spines['top'].set_visible(False)

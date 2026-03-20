@@ -50,9 +50,9 @@ if(biomarker=="tmb"){
     cohort_label <- "All TCGA "
 }
   
-  tmb_path <- paste(work_dir, 'tmb.svg', sep='/')
+  tmb_path <- paste(work_dir, 'tmb.png', sep='/')
   
-  svg(tmb_path, width = 8, height = 1.6, bg = "transparent")
+  png(tmb_path, width = 8, height = 1.6, units = "in", res = 300, bg = "transparent")
   print(
   ggplot(tcga_tmb_data) + 
     {
@@ -65,7 +65,7 @@ if(biomarker=="tmb"){
         geom_boxplot(aes(x=0,y=tmb,color="All TCGA"),width = 0.1, outlier.shape = NA) 
     } +
 
-    annotate(geom="segment", x = -0.1, xend=0.1, y=10, yend=10, colour = "gray") +
+    annotate(geom="segment", x = -0.1, xend=0.1, y=10, yend=10, colour = "gray", linetype = "dashed") +
     
     annotate(geom="text", y = 5,                          x=0,color="gray30",label="TMB-L",      vjust = -4.5, size=4) +
     annotate(geom="text", y = (10 + max(sampleTMB, 15))/2,x=0,color="gray30",label="TMB-H",      vjust = -4.5, size=4) +

@@ -67,9 +67,9 @@ class msi_processor(logger):
     def assemble_MSI(self, work_dir, msi_summary):
         msi_value, msi_status = self.extract_MSI(work_dir, msi_summary)
         msi_dict = self.call_MSI(msi_value, msi_status)
-        
+
         msi_plot_location = self.write_biomarker_plot(work_dir, msi_value, "msi")
-        msi_dict[constants.METRIC_PLOT] = converter().convert_svg(msi_plot_location, 'MSI plot')
+        msi_dict[constants.METRIC_PLOT] = converter().convert_png(msi_plot_location, 'MSI plot')
 
         return msi_dict
 
@@ -121,9 +121,11 @@ class msi_processor(logger):
         return msi_value, msi_status
 
     def write_biomarker_plot(self, work_dir, msi_value, marker):
-        out_path = os.path.join(work_dir, marker + '.svg')
-        
+        out_path = os.path.join(work_dir, marker + '.png')
+
         msi_value = float(msi_value)
+        # Use a small floor for log scale if value is 0
+        msi_plot_value = max(msi_value, 0.01)
         msi_cutoff = 0.4
 
         # Create the plot and the background and x label
@@ -140,25 +142,35 @@ class msi_processor(logger):
 
         # Set x and y axis
         ax.set_xscale("log")
-        ax.set_xlim(lower_lim, upper_lim)
-        ticks = np.array([msi_value, msi_cutoff, max(msi_value, msi_cutoff)*2])
+        # Ensure xlim is positive
+        x_min = min(msi_plot_value, msi_cutoff) * 0.3
+        x_max = max(msi_plot_value, msi_cutoff) * 2
+        ax.set_xlim(x_min, x_max)
+
+        # Ticks should also be positive. Use original msi_value for label if possible.
+        ticks = [msi_plot_value, msi_cutoff, x_max]
+
         ax.set_xticks(ticks)
         ax.xaxis.set_minor_locator(plt.NullLocator())
-        ax.set_xticklabels([f"{v}" for v in ticks], fontsize=6)
+        ax.set_xticklabels([f"{msi_value}", f"{msi_cutoff}", f"{x_max:.1f}"], fontsize=6)
         ax.set_ylim(0, 1)
         ax.get_yaxis().set_visible(False)
 
         # Plot basics: threshold, MSS and MSI labels
         ax.plot([msi_cutoff, msi_cutoff], [0, 1], color='grey', linestyle='--', linewidth=1.0, clip_on=False)
-        ax.text(mss_center, 0.85, 'MSS', color='gray', fontsize=6, ha='center')
-        ax.text(msi_center, 0.85, 'MSI', color='gray', fontsize=6, ha='center')
+
         
         # Plot red dot
-        # ax.plot(msi_value, 0.5, 'ro', markersize=3)
-        ax.plot(msi_value, 0.5, marker='o', markersize=9.5, color='red', markeredgewidth=0.5, markerfacecolor='none', clip_on=False)
-        ax.plot(msi_value, 0.5, marker='o', markersize=2.2, color='red', clip_on=False)
-        ax.text(msi_value, 0.3, "This Sample", color='red', fontsize=5.5, ha='center', va='top', clip_on=False)
-        
+
+        ax.plot(msi_plot_value, 0.5, marker='o', markersize=9.5, color='red', markeredgewidth=0.5, markerfacecolor='none', clip_on=False)
+        ax.plot(msi_plot_value, 0.5, marker='o', markersize=2.2, color='red', clip_on=False)
+        ax.text(msi_plot_value, 0.3, "This Sample", color='red', fontsize=5.5, ha='center', va='top', clip_on=False)
+
+        # Plot basics: threshold, MSS and MSI labels
+        ax.axvline(x=msi_cutoff, color='grey', linestyle='--', linewidth=0.8)
+        ax.text(msi_cutoff * 0.3, 0.85, 'MSS', color='gray', fontsize=6, ha='center')
+        ax.text(msi_cutoff * 1.7, 0.85, 'MSI', color='gray', fontsize=6, ha='center')
+
         # Get rid of borders (matches old Rscript plot look)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -166,7 +178,7 @@ class msi_processor(logger):
         ax.spines['bottom'].set_visible(False)
 
         plt.tight_layout()
-        plt.savefig(out_path, format="svg", bbox_inches='tight')
+        plt.savefig(out_path, format="png", dpi=300, bbox_inches='tight')
 
         self.logger.info("Wrote msi plot to {0}".format(out_path))
 

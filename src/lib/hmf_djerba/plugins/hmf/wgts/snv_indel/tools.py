@@ -160,7 +160,7 @@ class snv_indel_processor(logger):
         image_converter = converter(self.log_level, self.log_path)
         plot_path = os.path.join(self.work_dir, sic.VAF_PLOT_FILENAME)
         if self.workspace.has_file(sic.VAF_PLOT_FILENAME):
-            vaf_plot = image_converter.convert_svg(plot_path, 'CNV plot')
+            vaf_plot = image_converter.convert_png(plot_path, 'CNV plot')
         else:
             vaf_plot = None
         return vaf_plot
@@ -538,7 +538,7 @@ class snv_indel_processor(logger):
         plt.xticks([0, 25, 50, 75, 100], fontsize=8)
         plt.yticks(fontsize=8)
 
-        plt.savefig(output, bbox_inches = 'tight', backend='Cairo')
+        plt.savefig(output, format="png", dpi=300, bbox_inches = 'tight', backend='Cairo')
 
     def whizbam_to_text(self, in_name, out_name):
         in_path = os.path.join(self.work_dir, in_name)

@@ -29,12 +29,12 @@ if(biomarker=="msi"){
   names(boot) <- c("q0","q1","median_value","q3","q4")
   boot$Sample <- "Sample"
   
-  msi_out_path <- paste(work_dir, 'msi.svg', sep='/')
+  msi_out_path <- paste(work_dir, 'msi.png', sep='/')
   
   msi_median <- as.numeric(unique(boot$median_value))
   
   options(bitmapType='cairo')
-  svg(msi_out_path, width = 8, height = 1.6, bg = "transparent")
+  png(msi_out_path, width = 8, height = 1.6, units = "in", res = 300, bg = "transparent")
   print(
     
   ggplot(boot,aes(x="Sample")) + 
