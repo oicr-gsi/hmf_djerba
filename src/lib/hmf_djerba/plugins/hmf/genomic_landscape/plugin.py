@@ -16,7 +16,7 @@ from djerba.plugins.base import plugin_base
 from djerba.plugins.genomic_landscape.ctdna import ctdna_processor
 from hmf_djerba.plugins.hmf.genomic_landscape.hrd import hrd_processor
 from hmf_djerba.plugins.hmf.genomic_landscape.msi import msi_processor
-from djerba.plugins.genomic_landscape.tmb import tmb_processor
+from hmf_djerba.plugins.hmf.genomic_landscape.tmb import tmb_processor
 from djerba.util.environment import directory_finder
 from djerba.util.oncokb.annotator import annotator_factory
 from djerba.util.oncokb.tools import levels as oncokb_levels

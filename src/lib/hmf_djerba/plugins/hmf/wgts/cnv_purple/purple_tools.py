@@ -103,7 +103,7 @@ class purple_processor(logger):
         #plot
         breaks = list(range(0,highCN+1,2))
 
-        pseg_path = os.path.join(self.work_dir, "seg_CNV_plot.svg")
+        pseg_path = os.path.join(self.work_dir, "seg_CNV_plot.png")
         pseg = (
             ggplot(data = fitted_segments_df_plot)
             + geom_hline(yintercept = 2.0 , color="lightgrey", linetype="dotted")
@@ -128,9 +128,9 @@ class purple_processor(logger):
             )
         )
 
-        pseg.save(pseg_path, height=1.5, width=8, backend='Cairo', verbose=self.plot9_verbose)
+        pseg.save(pseg_path, height=1.5, width=8, dpi=300, backend='Cairo', verbose=self.plot9_verbose)
         image_converter = converter(self.log_level, self.log_path)
-        b64txt = image_converter.convert_svg(pseg_path, 'CNV plot')
+        b64txt = image_converter.convert_png(pseg_path, 'CNV plot')
 
         # allele specific segment plot "purple.seg_allele_plot.svg"
         fitted_segments_df_plot["A_adj"] = fitted_segments_df_plot["majorAlleleCopyNumber"] + 0.1
@@ -159,8 +159,8 @@ class purple_processor(logger):
                 axis_title_y = element_text(size = 10)
             )
         )
-        out_path = os.path.join(self.work_dir, "purple.seg_allele_plot.svg")
-        pseg_allele.save(out_path, height=2, width=8, verbose=self.plot9_verbose)
+        out_path = os.path.join(self.work_dir, "purple.seg_allele_plot.png")
+        pseg_allele.save(out_path, height=2, width=8, dpi=300, verbose=self.plot9_verbose)
 
         return b64txt
 
@@ -365,6 +365,13 @@ class purple_processor(logger):
     def look_at_purity_fit(self, segment_file, purity):
 
         fitted_segments_df = pd.read_csv(segment_file, sep="\t", comment="!")
+
+        # account for the purple v4.3 change where major/minor allele copy numbers are not in the segment file
+        if "majorAlleleCopyNumber" not in fitted_segments_df.columns:
+            fitted_segments_df["majorAlleleCopyNumber"] = fitted_segments_df["tumorBAF"] * fitted_segments_df["tumorCopyNumber"]
+        if "minorAlleleCopyNumber" not in fitted_segments_df.columns:
+            fitted_segments_df["minorAlleleCopyNumber"] = fitted_segments_df["tumorCopyNumber"] - fitted_segments_df["majorAlleleCopyNumber"]
+
         fitted_segments_df = fitted_segments_df[
             (fitted_segments_df["germlineStatus"] == "DIPLOID") &
             (fitted_segments_df["bafCount"] > 0)

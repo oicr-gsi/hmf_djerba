@@ -26,7 +26,7 @@ class cnv_processor(logger):
 
     ALTERATION_UPPER_CASE = 'ALTERATION'
     HUGO_SYMBOL_UPPER_CASE = 'HUGO_SYMBOL'
-    PLOT_FILENAME = 'seg_CNV_plot.svg'
+    PLOT_FILENAME = 'seg_CNV_plot.png'
     MINIMUM_MAGNITUDE_SEG_MEAN = 0.2
     GENOME_SIZE = 3095978931 # comes from https://www.ncbi.nlm.nih.gov/grc/human/data?asm=GRCh38.p12. Non-N bases. 
     SEG_FILENAME = 'seg.txt'
@@ -106,7 +106,7 @@ class cnv_processor(logger):
     def get_results(self):
         """Read previous output into the JSON serializable results structure"""
         image_converter = converter(self.log_level, self.log_path)
-        cnv_plot = image_converter.convert_svg(self.plot_path, 'CNV plot')
+        cnv_plot = image_converter.convert_png(self.plot_path, 'CNV plot')
         rows = []
         wgts_toolkit = wgts_tools(self.log_level, self.log_path)
         is_wgts = wgts_toolkit.has_expression(self.work_dir)
