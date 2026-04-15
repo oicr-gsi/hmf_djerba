@@ -9,7 +9,6 @@ TCGA_CODE = 'tcga_code'
 PURITY_INPUT = 'purity'
 DONOR = 'donor'
 MSI_FILE = 'msi_file'
-CTDNA_FILE = 'ctdna_file'
 SAMPLE_TYPE = 'sample_type'
 UNKNOWN_SAMPLE_TYPE = 'Unknown sample type'
 
@@ -27,10 +26,6 @@ CANT_REPORT_HRD_REASON = 'cant_report_hrd_reason'
 MSI_RESULTS_SUFFIX = '.purple.purity.tsv'
 MSI_WORKFLOW = 'purple'
 
-# For ctDNA file
-CTDNA_RESULTS_SUFFIX = 'SNP.count.txt'
-CTDNA_WORKFLOW = 'mrdetect_filter_only'
-
 HRD_WORKFLOW = 'hrDetect'
 
 # Constants for the rest of the plugin in alphabetical order
@@ -44,10 +39,6 @@ CANCER_SPECIFIC_COHORT = 'Cancer-specific Cohort'
 CANCER_TYPE_HEADER = 'CANCER.TYPE'
 CLINICALLY_RELEVANT_VARIANTS = 'Clinically relevant variants'
 COMPASS = 'COMPASS'
-CTDNA = 'ctDNA'
-CTDNA_CANDIDATES = 'ctDNA_candidate_sites'
-CTDNA_ELIGIBILITY = 'ctDNA_eligibility'
-CTDNA_ELIGIBILITY_CUTOFF = 4000
 DATA_SEGMENTS = 'data.seg'
 GENOME_SIZE = 3*10**9 # TODO use more accurate value when we release a new report format
 GENOMIC_BIOMARKERS = 'genomic_biomarkers.maf'
