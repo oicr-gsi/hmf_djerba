@@ -120,7 +120,10 @@ class main(helper_base):
 
             for row in reader:
                 try:
-                    # Extract gene_id and remove version suffix
+                    # Extract gene_id and remove version suffix (skip gene_id with _PAR_Y suffix)
+                    raw_gene_id = row[gene_id_index]
+                    if "_PAR_Y" in raw_gene_id:
+                        continue
                     gene_id = self._get_stable_gene_id(row[gene_id_index])
                     tpm_values[gene_id] = row[tpm_index]
                 except IndexError as err:
@@ -145,8 +148,12 @@ class main(helper_base):
                     row.insert(1, tumour_id)
                     first = False
                 else:
-                    # Extract gene_id from reference and remove version suffix
-                    gene_id_from_ref = self._get_stable_gene_id(row[0])
+                    # Extract gene_id from reference and remove version suffix  (skip gene_id with _PAR_Y suffix)
+                    raw_gene_id_from_ref = row[0]
+                    if "_PAR_Y" in raw_gene_id_from_ref:
+                        continue
+                    gene_id_from_ref = self._get_stable_gene_id(raw_gene_id_from_ref)
+                    row[0] = gene_id_from_ref
                     try:
                         row.insert(1, tpm_values[gene_id_from_ref])
                     except KeyError:
