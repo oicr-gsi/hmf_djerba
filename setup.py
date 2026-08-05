@@ -44,6 +44,7 @@ setup(
         'hmf_djerba.plugins.hmf.wgts.cnv_purple': install_wildcards,
         'hmf_djerba.plugins.hmf.wgts.common.cnv': install_wildcards,
         'hmf_djerba.plugins.hmf.wgts.snv_indel': install_wildcards,
+        'hmf_djerba.helpers.hmf.expression_helper': install_wildcards,
     },
     install_requires=[
         'djerba',

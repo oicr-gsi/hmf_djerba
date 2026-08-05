@@ -9,6 +9,9 @@
 - Updated fusion, cnv, and snv_indel plugins to support changes to `djerba.util` in Djerba v1.11.11 
 - Implement integration test that verifies the compatibility between HMF_Djerba and Djerba.
 - Use new RODiC database rebuilt using TPM-based data from TCGA GDC.
+- Pinned the Djerba requirement to v1.12.0.
+- Removed the HRD and MSI purity reporting thresholds from the genomic landscape plugin.
+- Updated the pregenerated `purple.alternate.json`.
 
 ## v0.0.3: 2025-12-04
 - More name fixes in `setup.py`

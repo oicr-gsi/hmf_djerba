@@ -3,8 +3,6 @@ a plugin for WGTS CNV, based on PURPLE
 """
 
 # IMPORTS
-import os
-
 import djerba.core.constants as core_constants
 import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as pc
 import djerba.util.oncokb.constants as oc
@@ -57,7 +55,6 @@ class main(plugin_base):
         self.logger.debug("Read purity/ploidy from workspace: {0}".format(purity_ploidy))
         ploidy = purity_ploidy[pc.PLOIDY]
         tumour_id = wrapper.get_my_string(core_constants.TUMOUR_ID)
-        normal_id = wrapper.get_my_string(core_constants.NORMAL_ID)
 
         # process purple files
         self.logger.debug("Starting purple data processing")
@@ -82,16 +79,11 @@ class main(plugin_base):
         processor.write_copy_states(tumour_id)
 
         # write alternate solutions launcher JSON
-        if os.path.exists(os.path.join(work_dir, core_constants.DEFAULT_PATH_INFO)):
-            self.logger.debug("Writing alternate solutions JSON")
-            purple_alternate = processor.write_purple_alternate_launcher(
-                self.workspace.read_json(core_constants.DEFAULT_PATH_INFO),
-                wrapper.get_my_string(pc.PURPLE_DIR),
-                normal_id,
-                tumour_id)
-            self.workspace.write_json(pc.PURPLE_ALT, purple_alternate)
-        else:
-            self.logger.debug("Omitting alternate solutions (path info not available)")
+        self.logger.debug("Writing alternate solutions JSON")
+        purple_alternate = processor.write_purple_alternate_launcher(
+            wrapper.get_my_string(pc.PURPLE_DIR)
+        )
+        self.workspace.write_json(pc.PURPLE_ALT, purple_alternate)
 
         # run oncokb annotator
         self.logger.debug("Finding OncoKB variant annotation")

@@ -12,41 +12,30 @@ class html_builder:
         cell = template.format(biomarker,plot)
         return(cell)
 
-    def biomarker_table_rows(self, biomarkers, can_report_hrd, cant_report_hrd_reason, can_report_msi):
+    def biomarker_table_rows(self, biomarkers, can_report_hrd, cant_report_hrd_reason):
         rows = []
         for marker, info in biomarkers.items():
-            if marker == "HRD" and not can_report_hrd and cant_report_hrd_reason:
-                if cant_report_hrd_reason == constants.PURITY_REASON:
-                    cells = [
-                        hb.td(info[constants.ALT]),
-                        hb.td("NA"),
-                        hb.td("Cancer cell content below threshold to evaluate HRD; must be &#8805;50&#37; for FFPE samples, &#8805;30&#37; otherwise")
-                    ]
-                elif cant_report_hrd_reason == constants.COVERAGE_REASON:
-                    cells = [
-                        hb.td(info[constants.ALT]),
-                        hb.td("NA"),
-                        hb.td("Coverage above threshold to evaluate HRD; must be &#8804;115X")
-                    ]
-                elif cant_report_hrd_reason == constants.CHORD_REASON:
-                    cells = [
-                        hb.td(info[constants.ALT]),
-                        hb.td("NA"),
-                        hb.td("HRD score could not be determined (reason: {0}).".format(info[constants.METRIC_TEXT]))
-                    ]
+            if marker == "HRD" and not can_report_hrd:
+                if cant_report_hrd_reason == constants.CHORD_REASON:
+                    # CHORD could not make a call, so there is no score or plot to show
+                    text = "HRD score could not be determined (reason: {0}).".format(
+                        info[constants.METRIC_TEXT]
+                    )
                 else:
-                    msg = "Cannot report HRD reason: {0}. The only valid reasons for HRD to not be reported are purity and coverage".format(cant_report_hrd_reason)
-                    self.logger.error(msg)
+                    # evaluate_reportability() in the plugin can only ever set
+                    # CHORD_REASON, so any other value means the plugin and this
+                    # renderer have gone out of sync
+                    msg = "Unexpected reason for not reporting HRD: '{0}'".format(
+                        cant_report_hrd_reason
+                    )
                     raise ValueError(msg)
-                    
-            elif marker == "MSI" and not can_report_msi:
                 cells = [
                     hb.td(info[constants.ALT]),
                     hb.td("NA"),
-                    hb.td("Cancer cell content below threshold to call MS score; must be &#8805;50&#37;")
+                    hb.td(text)
                 ]
 
-            elif marker == "MSI" and can_report_msi and info[constants.METRIC_ALTERATION] == "UNKNOWN":
+            elif marker == "MSI" and info[constants.METRIC_ALTERATION] == "UNKNOWN":
                 cells = [
                     hb.td(info[constants.ALT]),
                     hb.td("UNKNOWN"),
