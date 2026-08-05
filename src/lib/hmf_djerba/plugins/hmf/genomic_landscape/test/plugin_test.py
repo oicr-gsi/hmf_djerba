@@ -14,7 +14,7 @@ from djerba.util.validator import path_validator
 from djerba.plugins.plugin_tester import PluginTester
 from djerba.core.workspace import workspace
 from djerba.util.environment import directory_finder
-from djerba.plugins.genomic_landscape.hrd import hrd_processor
+from hmf_djerba.plugins.hmf.genomic_landscape.hrd import hrd_processor
 
 class TestGenomicLandscapePlugin(PluginTester):
     
@@ -27,7 +27,7 @@ class TestGenomicLandscapePlugin(PluginTester):
         self.tmp = tempfile.TemporaryDirectory(prefix='djerba_')
         self.tmp_dir = self.tmp.name
         self.sup_dir = directory_finder().get_test_dir()
-        self.plugin_test_dir = os.path.join(self.sup_dir, "plugins", "genomic-landscape")
+        self.plugin_test_dir = os.path.join(self.sup_dir, "plugins", "hmf/genomic-landscape")
         self.data_mut_ex = os.path.join(self.plugin_test_dir, "data_mutations_extended.txt")
         self.data_seg = os.path.join(self.plugin_test_dir, "data.seg")
         self.sample_info = os.path.join(self.plugin_test_dir, "sample_info.json")
@@ -66,7 +66,7 @@ class TestGenomicLandscapePlugin(PluginTester):
         params = {
             self.INI: self.INI_NAME,
             self.JSON: json_location,
-            self.MD5: '690242139aab0153348e7a4634d2f17c'
+            self.MD5: 'fe6dd37fe13e310a7694bf1ab0dc6da2'
         }
         self.run_basic_test(input_dir, params)
 
@@ -91,10 +91,9 @@ class TestGenomicLandscapePlugin(PluginTester):
         params = {
             self.INI: self.INI_NAME,
             self.JSON: json_location,
-            self.MD5: '2851dc05b9e92514e1eff82f8c992663'
+            self.MD5: 'd6061ec0bafd6c22d045ef9e0efadb7c'
         }
         self.run_basic_test(input_dir, params)
-
 
     def redact_json_data(self, data):
         """replaces empty method from testing.tools"""

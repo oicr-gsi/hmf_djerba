@@ -4,6 +4,7 @@ AUTHOR: Felix Beaudry
 """
 
 import csv
+import glob
 import json
 import lets_plot as lp
 import logging
@@ -15,6 +16,7 @@ import pandas as pd
 import re
 import tempfile
 import zipfile
+import glob
 from scipy.stats import norm
 from plotnine import *
 from matplotlib import gridspec
@@ -23,7 +25,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-import djerba.plugins.wgts.cnv_purple.constants as pc
+import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as pc
 from djerba.util.logger import logger
 from djerba.util.environment import directory_finder
 from djerba.util.image_to_base64 import converter
@@ -52,7 +54,7 @@ class purple_processor(logger):
         centromeres = pd.read_csv(centromeres_file, sep="\t")
         arm_level_calls = self.arm_level_caller_purple(segs, centromeres)
         arm_level_calls.to_csv(os.path.join(self.work_dir, "purple.arm_level_calls.txt"), index=False, header=False)
-        
+
         # Back convert Copy Number profiles to log2 values for plotting in IGV
         segs["ID"] = "purple"
         log2 = segs[["ID", "chromosome", "start", "end", "bafCount"]].copy()
@@ -76,7 +78,7 @@ class purple_processor(logger):
 
         # Put the tables together to output a table with genes, MACN, CN
         CN_table["local_cn"] = genes_CN["b_allele"]
-        
+
         # Rename the columns
         CN_table.columns = ["Hugo_Symbol", "MACN", "CN"]
         # write to a table
@@ -101,11 +103,11 @@ class purple_processor(logger):
         #plot
         breaks = list(range(0,highCN+1,2))
 
-        pseg_path = os.path.join(self.work_dir, "seg_CNV_plot.svg")
+        pseg_path = os.path.join(self.work_dir, "seg_CNV_plot.png")
         pseg = (
             ggplot(data = fitted_segments_df_plot)
-            + geom_hline(yintercept = 2.0 , color="lightgrey", linetype="dotted") 
-            + geom_segment(aes(x='start', xend='end', y='copyNumber', yend='copyNumber'), data = fitted_segments_df_plot, color="black",size=2, na_rm = True) 
+            + geom_hline(yintercept = 2.0 , color="lightgrey", linetype="dotted")
+            + geom_segment(aes(x='start', xend='end', y='copyNumber', yend='copyNumber'), data = fitted_segments_df_plot, color="black",size=2, na_rm = True)
             + facet_grid(". ~ Chromosome", scales = 'free', space="free")
             + scale_y_continuous(limits=[-0.11,highCN+0.4],breaks=breaks)
             + geom_vline(aes(xintercept = 'start'),data=fitted_segments_df_plot[fitted_segments_df_plot['cent'] == 1],color="lightgrey")
@@ -126,9 +128,9 @@ class purple_processor(logger):
             )
         )
 
-        pseg.save(pseg_path, height=1.5, width=8, backend='Cairo', verbose=self.plot9_verbose)
+        pseg.save(pseg_path, height=1.5, width=8, dpi=300, backend='Cairo', verbose=self.plot9_verbose)
         image_converter = converter(self.log_level, self.log_path)
-        b64txt = image_converter.convert_svg(pseg_path, 'CNV plot')
+        b64txt = image_converter.convert_png(pseg_path, 'CNV plot')
 
         # allele specific segment plot "purple.seg_allele_plot.svg"
         fitted_segments_df_plot["A_adj"] = fitted_segments_df_plot["majorAlleleCopyNumber"] + 0.1
@@ -157,15 +159,15 @@ class purple_processor(logger):
                 axis_title_y = element_text(size = 10)
             )
         )
-        out_path = os.path.join(self.work_dir, "purple.seg_allele_plot.svg")
-        pseg_allele.save(out_path, height=2, width=8, verbose=self.plot9_verbose)
+        out_path = os.path.join(self.work_dir, "purple.seg_allele_plot.png")
+        pseg_allele.save(out_path, height=2, width=8, dpi=300, verbose=self.plot9_verbose)
 
         return b64txt
 
     def consider_purity_fit(self, purple_range_file):
         range_df = pd.read_csv(purple_range_file, sep="\t", comment='!')
         output = os.path.join(self.work_dir, "purple.range.png")
-        
+
         best_purity = range_df["purity"][0]
         best_ploidy = range_df["ploidy"][0]
         best_score = range_df["score"][0]
@@ -184,8 +186,8 @@ class purple_processor(logger):
         range_after['xmin'] = range_after['ploidy'] - (range_after['ploidy'] - range_after['leftPloidy']) / 2
         range_after['xmax'] = range_after['ploidy'] + (range_after['rightPloidy'] - range_after['ploidy']) / 2
         range_after['xmin'] = np.where(range_after['xmin'].isna(), range_after['ploidy'], range_after['xmin'])
-        range_after['xmax'] = np.where(range_after['xmax'].isna(), range_after['ploidy'], range_after['xmax']) 
-        
+        range_after['xmax'] = np.where(range_after['xmax'].isna(), range_after['ploidy'], range_after['xmax'])
+
         max_ploidy = (
             range_after
             .sort_values(by=['purity', 'ploidy'], ascending=[True, False])
@@ -194,7 +196,7 @@ class purple_processor(logger):
             .reset_index()
             ['ploidy']
             .min())
-        
+
         min_ploidy = (
             range_after
             .sort_values(by=['purity', 'ploidy'])
@@ -203,14 +205,14 @@ class purple_processor(logger):
             .reset_index()
             ['ploidy']
             .max())
-        
+
         max_ploidy = max(max_ploidy, best_ploidy)
         min_ploidy = min(min_ploidy, best_ploidy)
 
         range_after_filter = range_after[(range_after['xmin'] <= max_ploidy) & (range_after['xmax'] >= min_ploidy)]
         range_after_filter['xmax'] = np.minimum(range_after['xmax'], max_ploidy)
         range_after_filter['xmin'] = np.maximum(range_after['xmin'], min_ploidy)
-        
+
         # Create custom gradient
         colors = ["black", "darkblue", "blue", "lightblue", "white", "white"]
         values = [0, 0.1, 0.1999, 0.2, 0.5, 1]
@@ -220,8 +222,8 @@ class purple_processor(logger):
         fig, ax = plt.subplots(figsize=(10, 6))
 
         for _, row in range_after_filter.iterrows():
-            ax.add_patch(plt.Rectangle((row['xmin'], row['ymin']), 
-                                row['xmax'] - row['xmin'], 
+            ax.add_patch(plt.Rectangle((row['xmin'], row['ymin']),
+                                row['xmax'] - row['xmin'],
                                 row['ymax'] - row['ymin'],
                                 color=cmap(row['score'])))
         ax.axvline(x=best_ploidy, linestyle='--', linewidth=1, color='k')
@@ -258,13 +260,13 @@ class purple_processor(logger):
         standard_deviations_per_ploidy = max(min_standard_deviation_per_ploidy_point, purity * norm_factor/ 2/standard_deviation)
 
         return 2 * norm.cdf(ploidy_distance_from_integer * standard_deviations_per_ploidy) - 1 + max(-0.5-ploidy,0)
-    
+
     def arm_level_caller_purple(self, segs, centromeres, gain_threshold=6, shallow_deletion_threshold=2, seg_perc_threshold=80, baf_min=50):
         """
         Take segment information and turn into chromosome arm level AMP/DEL calls, assuming $seg.perc.threshold is AMP'd or DEL'd
         """
         segs["seg_length"] = segs["end"] - segs["start"]
-        ## roughly estimate centromere position 
+        ## roughly estimate centromere position
         ## b/c the annotation has several centromeric regions
         centromeres_rough = centromeres.groupby('chrom').agg(
             cent_start=('chromStart', 'min'),
@@ -272,12 +274,12 @@ class purple_processor(logger):
             ).reset_index()
         centromeres_rough["cent_length"] = centromeres_rough["cent_end"] - centromeres_rough["cent_start"]
         centromeres_rough["cent_mid"] = round((centromeres_rough["cent_end"] + centromeres_rough["cent_start"]) / 2).astype(int)
-        
+
         arms_n_cents = segs.groupby('chromosome').agg(
             chrom_start=('start', 'min'),
             chrom_length=('end', 'max'),
             ).reset_index().merge(centromeres_rough, how='left', left_on='chromosome', right_on='chrom').drop(columns=["chrom"])
-        
+
         #first arm is always petite (p)
         p_arms = arms_n_cents[['chromosome', 'chrom_start', 'cent_start']].rename(columns={'chromosome':'chrom', 'chrom_start':'arm_start', 'cent_start':'arm_end'})
         p_arms["arm"] = "p"
@@ -288,7 +290,7 @@ class purple_processor(logger):
         q_arms['arm'] = "q"
 
         arm_definitions = pd.concat(
-            [p_arms[p_arms["chrom_type"] == "metacentric"].drop(columns=["chrom_type"]), 
+            [p_arms[p_arms["chrom_type"] == "metacentric"].drop(columns=["chrom_type"]),
              q_arms])
         arm_definitions["arm_length"] = arm_definitions["arm_end"] - arm_definitions["arm_start"]
 
@@ -302,7 +304,7 @@ class purple_processor(logger):
             'start >= arm_start & end <= arm_end & chromosome == chrom'
             ).loc[:, ['chrom', 'arm', 'arm_length', 'copyNumber', 'seg_length', 'arm_start', 'arm_end']])
         segs_armd = segs_armd.rename(columns = {'arm_start':'start', 'arm_end':'end'})
-    
+
         ## use NCCN terminology
         segs_armd["CNA"] = np.where(segs_armd["copyNumber"] < shallow_deletion_threshold, "del", "neutral")
         segs_armd["CNA"] = np.where(segs_armd["copyNumber"] > gain_threshold, "+", segs_armd["CNA"])
@@ -313,12 +315,12 @@ class purple_processor(logger):
             ).reset_index()
         arm_CNA_prop["seg_perc"] = round((arm_CNA_prop["sum"] / arm_CNA_prop["mean"]) * 100,2)
         arm_CNA_prop = arm_CNA_prop.query('seg_perc > @seg_perc_threshold & CNA != "neutral"').sort_values("seg_perc", ascending=False)
-        
+
         ## assemble annotation from columns
         arm_CNA_prop["annotation"] = arm_CNA_prop["CNA"] + "(" + arm_CNA_prop["chrom"].str.replace("chr", "") + arm_CNA_prop["arm"] + ")"
 
         return arm_CNA_prop["annotation"].sort_values()
-        
+
     def construct_whizbam_link(self, studyid, tumourid):
         genome = pc.WHIZBAM_GENOME_VERSION
         whizbam_base_url = pc.WHIZBAM_BASE_URL
@@ -331,7 +333,7 @@ class purple_processor(logger):
                            "&genome=", genome
         ))
         return whizbam
-    
+
     def construct_whizbam_links(self, df, whizbam_url):
         if not df.empty:
             df["whizbam"] = whizbam_url + "&chr=" + df["chromosome"].str.replace("chr", "") + \
@@ -347,7 +349,7 @@ class purple_processor(logger):
         if purple_gene_file:
             self.logger.info("Processing CNA data")
             cna, cna_nondiploid = self.pre_process_CNA(purple_gene_file, oncolistpath, tumour_id, ploidy)
-            
+
             # write to files
             cna.to_csv(cna_output, sep="\t", index=False)
             cna_nondiploid.to_csv(nondiploid_output, sep="\t", index=False)
@@ -359,10 +361,17 @@ class purple_processor(logger):
         single_event_distance = self.single_event_distance_calculator(major_allele, minor_allele)
 
         return 1 + ploidy_penalty_factor * min(single_event_distance, whole_genome_doubling_distance)
-    
+
     def look_at_purity_fit(self, segment_file, purity):
 
         fitted_segments_df = pd.read_csv(segment_file, sep="\t", comment="!")
+
+        # account for the purple v4.3 change where major/minor allele copy numbers are not in the segment file
+        if "majorAlleleCopyNumber" not in fitted_segments_df.columns:
+            fitted_segments_df["majorAlleleCopyNumber"] = fitted_segments_df["tumorBAF"] * fitted_segments_df["tumorCopyNumber"]
+        if "minorAlleleCopyNumber" not in fitted_segments_df.columns:
+            fitted_segments_df["minorAlleleCopyNumber"] = fitted_segments_df["tumorCopyNumber"] - fitted_segments_df["majorAlleleCopyNumber"]
+
         fitted_segments_df = fitted_segments_df[
             (fitted_segments_df["germlineStatus"] == "DIPLOID") &
             (fitted_segments_df["bafCount"] > 0)
@@ -484,7 +493,7 @@ class purple_processor(logger):
         plt.close(fig)
 
 
-    
+
     def major_allele_deviation(self, purity, norm_factor, ploidy, baseline_deviation, major_allele_sub_one_penalty_multiplier = 1 ):
         major_allele_multiplier =1
         if (ploidy >= 0) & (ploidy <= 1):
@@ -492,16 +501,16 @@ class purple_processor(logger):
         deviation = major_allele_multiplier * self.allele_deviation(purity, norm_factor, ploidy) + self.sub_minimum_ploidy_penalty(1, ploidy)
 
         return max(deviation, baseline_deviation)
-    
+
     def minor_allele_deviation(self, purity, norm_factor, ploidy, baseline_devitation):
         deviation = self.allele_deviation(purity, norm_factor, ploidy) + self.sub_minimum_ploidy_penalty(0, ploidy)
 
         return max(deviation, baseline_devitation)
-    
+
     def pre_process_CNA(self, purple_gene_file, oncolistpath, tumour_id, ploidy, ploidy_multiplier=2.4):
         oncolist = pd.read_csv(oncolistpath, sep="\t")
         raw_gene_data = pd.read_csv(purple_gene_file, sep="\t")
-        
+
         amp = ploidy_multiplier * float(ploidy)
         hmz = 0.5
 
@@ -518,7 +527,7 @@ class purple_processor(logger):
         df_cna_thresh.insert(0, "Hugo_Symbol", df_cna_thresh["gene"])
 
         return df_cna_thresh, df_cna_thresh_onco_nondiploid
-    
+
     def pre_proc_loh(self, segments, genebed):
         segments["chrom"] = segments["chrom"].str.replace("chr", "")
         segments["ID"] = "b_allele"
@@ -526,7 +535,7 @@ class purple_processor(logger):
         a_allele = genebed[["genename", "b_allele"]].copy()
 
         return a_allele
-    
+
     def process_centromeres(self, centromeres):
         """
         Add some columns to the centromere file so it plots pretty in CNV track
@@ -552,41 +561,37 @@ class purple_processor(logger):
         df.columns = ["MajorAllele"] + column_names
         df_long = df.melt(id_vars=['MajorAllele'], var_name='MinorAllele', value_name='Penalty')
         df_long = df_long.dropna(subset=['Penalty'])
-    
+
         return df_long
-    
+
     def purity_matrix(self, purity, ploidy, baseline_deviation = 0.1):
         result_matrix = np.full(shape=(len(ploidy), len(ploidy)),fill_value=np.nan)
-  
+
         for i in range(len(ploidy)):
             for j in range(i + 1):
                 major_ploidy = ploidy[i]
                 minor_ploidy = ploidy[j]
-                total_penalty = self.event_penalty(major_ploidy, minor_ploidy) * (self.major_allele_deviation(purity, 1, major_ploidy, baseline_deviation) + self.minor_allele_deviation(purity, 1, minor_ploidy, baseline_deviation)) 
+                total_penalty = self.event_penalty(major_ploidy, minor_ploidy) * (self.major_allele_deviation(purity, 1, major_ploidy, baseline_deviation) + self.minor_allele_deviation(purity, 1, minor_ploidy, baseline_deviation))
                 result_matrix[i, j] = total_penalty
 
         return result_matrix
 
-    def read_purity_ploidy(self, purple_zip):
-        tempdir = tempfile.TemporaryDirectory()
-        tmp = tempdir.name
-        zf = zipfile.ZipFile(purple_zip)
-        name_list = [x for x in zf.namelist() if not re.search('/$', x)]
-        purple_purity_path = None
-        for name in name_list:
-            if re.search(r'purple\.purity\.tsv$', name):
-                purple_purity_path = zf.extract(name, tmp)
-                break
-        if purple_purity_path is None:
-            msg = 'Cannot find purity file in ZIP archive {0}'.format(purple_zip)
+    def read_purity_ploidy(self, purple_dir): # Renamed input from purple_zip to purple_dir
+        # Find the purity file in the provided directory
+        purity_files = glob.glob(os.path.join(purple_dir, '*.purple.purity.tsv'))
+        if not purity_files:
+            msg = 'Cannot find purity file in directory {0}'.format(purple_dir)
             self.logger.error(msg)
             raise RuntimeError(msg)
-        self.logger.debug('Extracted purity/ploidy to {0}'.format(purple_purity_path))
+
+        purple_purity_path = purity_files[0] # Assume there is only one
+        self.logger.debug('Reading purity/ploidy from {0}'.format(purple_purity_path))
+
         with open(purple_purity_path, 'r') as purple_purity_file:
             lines = purple_purity_file.readlines()
         if len(lines) != 2:
             msg = "Data format error: Expected 2 lines in purity/ploidy "+\
-                "file {0}, found {1}".format(purple_purity_path, len(lines))
+                  "file {0}, found {1}".format(purple_purity_path, len(lines))
             self.logger.error(msg)
             raise RuntimeError(msg)
         reader = csv.DictReader(lines, delimiter="\t")
@@ -600,46 +605,51 @@ class purple_processor(logger):
             raise RuntimeError(msg) from err
         except KeyError as err:
             msg = "Cannot find purity and/or ploidy column in "+\
-                "PURPLE purity file: {0}".format(err)
+                  "PURPLE purity file: {0}".format(err)
             self.logger.error(msg)
             raise RuntimeError(msg) from err
+
         purity_ploidy = {
             pc.PURITY: purity,
             pc.PLOIDY: ploidy
         }
-        tempdir.cleanup()
         return purity_ploidy
 
     def single_event_distance_calculator(self, major_allele, minor_allele):
         single_event_distance = abs(major_allele - 1) + abs(minor_allele - 1)
 
         return single_event_distance
-    
+
     def sub_minimum_ploidy_penalty(self, min_ploidy, ploidy, major_allele_sub_one_additional_penalty = 1.5):
         penalty = - major_allele_sub_one_additional_penalty * (float(ploidy) - min_ploidy)
 
         return min(major_allele_sub_one_additional_penalty, max(penalty, 0))
-    
-    def unzip_purple(self, purple_zip):
-        zf = zipfile.ZipFile(purple_zip)
-        name_list = [x for x in zf.namelist() if not re.search('/$', x)]
+
+    def find_purple_files(self, purple_dir): # Renamed from unzip_purple
         purple_files = {}
-        for name in name_list:
-            if re.search(r'purple\.purity\.range\.tsv$', name):
-                purple_files[pc.PURPLE_PURITY_RANGE] = zf.extract(name, self.work_dir)
-            elif re.search(r'purple\.cnv\.somatic\.tsv$', name):
-                purple_files[pc.PURPLE_CNV] = zf.extract(name, self.work_dir)
-            elif re.search(r'purple\.segment\.tsv$', name):
-                purple_files[pc.PURPLE_SEG] = zf.extract(name, self.work_dir)
-            elif re.search(r'purple\.cnv\.gene\.tsv$', name):
-                purple_files[pc.PURPLE_GENE] = zf.extract(name, self.work_dir)
+
+        file_patterns = {
+            pc.PURPLE_PURITY_RANGE: '*.purple.purity.range.tsv',
+            pc.PURPLE_CNV: '*.purple.cnv.somatic.tsv',
+            pc.PURPLE_SEG: '*.purple.segment.tsv',
+            pc.PURPLE_GENE: '*.purple.cnv.gene.tsv'
+        }
+
+        for key, pattern in file_patterns.items():
+            files = glob.glob(os.path.join(purple_dir, pattern))
+            if not files:
+                msg = 'Cannot find {0} file in directory {1}'.format(pattern, purple_dir)
+                self.logger.error(msg)
+                raise RuntimeError(msg)
+            purple_files[key] = files[0] # Assume there is only one
+
         return purple_files
 
     def whole_genome_doubling_distance_calculator(self, major_allele, minor_allele):
         whole_genome_doubling_distance = 1 + abs(major_allele - 2) + abs(minor_allele - 2)
 
         return whole_genome_doubling_distance
-    
+
     def write_copy_states(self, tumour_id):
         """
         Write the copy states to JSON for later reference, eg. by snv/indel plugin
@@ -666,24 +676,45 @@ class purple_processor(logger):
         with open(os.path.join(self.work_dir, self.COPY_STATE_FILE), 'w') as out_file:
             out_file.write(json.dumps(states, sort_keys=True, indent=4))
 
-    def write_purple_alternate_launcher(self, path_info):
-        bam_files = path_info.get(pc.BMPP)
-        if not path_info.get(pc.MUTECT2) == None:
-            vcf_index = ".".join((path_info.get(pc.MUTECT2), "tbi"))
-        else:
-            vcf_index = None
+    def write_purple_alternate_launcher(self, path_info, purple_dir, normal_id, tumour_id):
+        # input_bucket is derived from purple_dir
+        if not purple_dir:
+            self.logger.warning("Purple directory is not valid")
+            return {}
+        if not normal_id:
+            self.logger.warning("Normal ID is not valid")
+            return {}
+        if not tumour_id:
+            self.logger.warning("Tumor ID is not valid")
+            return {}
+
+        input_bucket = os.path.dirname(purple_dir)
+        self.logger.debug(f"path_info received: {path_info}, purple_dir received: {purple_dir}")
+        self.logger.debug(f"normalID received: {normal_id}, tumorID received: {tumour_id}")
+
+        def find_unique_file(pattern):
+            files = glob.glob(pattern)
+            if not files:
+                self.logger.warning(f"No file found for pattern: {pattern}")
+                return None
+            if len(files) > 1:
+                self.logger.warning(f"Multiple files found for pattern {pattern}, using first: {files[0]}")
+            return files[0]
+
         purple_paths = {
-            "purple.normal_bam": bam_files["whole genome normal bam"],
-            "purple.normal_bai": bam_files["whole genome normal bam index"],
-            "purple.tumour_bam": bam_files["whole genome tumour bam"],
-            "purple.tumour_bai": bam_files["whole genome tumour bam index"],
-            "purple.filterSV.vcf": path_info.get(pc.GRIDSS),
-            "purple.filterSMALL.vcf": path_info.get(pc.MUTECT2),
-            "purple.filterSMALL.vcf_index": vcf_index,
-            "purple.runPURPLE.min_ploidy": 0,
-            "purple.runPURPLE.max_ploidy": 8,
-            "purple.runPURPLE.min_purity": 0,
-            "purple.runPURPLE.max_purity": 1
+            "purple.normal_bam": find_unique_file(os.path.join(input_bucket, normal_id, "aligner", "*.bam")),
+            "purple.normal_bai": find_unique_file(os.path.join(input_bucket, normal_id, "aligner", "*.bam.bai")),
+            "purple.tumour_bam": find_unique_file(os.path.join(input_bucket, tumour_id, "aligner", "*.bam")),
+            "purple.tumour_bai": find_unique_file(os.path.join(input_bucket, tumour_id, "aligner", "*.bam.bai")),
+            "purple.filterSMALL.vcf": find_unique_file(os.path.join(purple_dir, '*purple.somatic.vcf.gz')),
+            "purple.filterSMALL.vcf_index": find_unique_file(os.path.join(purple_dir, '*purple.somatic.vcf.gz.tbi')),
+            "purple.filterSV.vcf": find_unique_file(os.path.join(purple_dir, '*purple.sv.vcf.gz')),
+            "purple.input_amber_directory": os.path.join(input_bucket,"amber"),
+            "purple.input_cobalt_directory": os.path.join(input_bucket, "cobalt"),
+            "purple.runPURPLE.min_ploidy": str(0),
+            "purple.runPURPLE.max_ploidy": str(8),
+            "purple.runPURPLE.min_purity": str(0),
+            "purple.runPURPLE.max_purity": str(1)
         }
         return purple_paths
 
