@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v0.0.4: 2025-08-05
+## v0.0.4: 2026-08-05
 - Modified genomic landscape plugin to support HRD CHORD output from HMF (cannot currently find the files automatically; must be specified in the config)
 - Modified genomic landscape plugin to support MSI PURPLE output from HMF (cannot currently find the files automatically; must be specified in the config)
 - Minor plot fixes to HMF HRD plugin
