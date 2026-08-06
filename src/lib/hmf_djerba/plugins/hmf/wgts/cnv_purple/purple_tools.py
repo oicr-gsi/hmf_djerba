@@ -685,23 +685,31 @@ class purple_processor(logger):
         input_bucket = os.path.dirname(purple_dir)
         self.logger.debug(f"purple_dir received: {purple_dir}")
 
-        def find_unique_file(pattern):
+        def find_unique_file(pattern, fallback):
             files = glob.glob(pattern)
             if not files:
-                self.logger.warning(f"No file found for pattern: {pattern}")
-                return None
+                msg = "No file found for pattern {0}, falling back to {1}"
+                self.logger.warning(msg.format(pattern, fallback))
+                return fallback
             if len(files) > 1:
                 self.logger.warning(f"Multiple files found for pattern {pattern}, using first: {files[0]}")
             return files[0]
 
         sage_dir = os.path.join(input_bucket, "sage", "somatic")
+        tumour_library = os.path.basename(os.path.normpath(purple_dir)).split('.')[0]
+        sage_vcf = os.path.join(sage_dir, tumour_library + pc.ALT_SAGE_VCF_SUFFIX)
+        sage_vcf_index = os.path.join(sage_dir, tumour_library + pc.ALT_SAGE_VCF_INDEX_SUFFIX)
         purple_paths = {
             "purple.normal": pc.ALT_NORMAL_CRAM,
             "purple.normal_index": pc.ALT_NORMAL_CRAM_INDEX,
             "purple.tumour": pc.ALT_TUMOUR_CRAM,
             "purple.tumour_index": pc.ALT_TUMOUR_CRAM_INDEX,
-            "purple.filterSMALL.vcf": find_unique_file(os.path.join(sage_dir, '*.sage.somatic.vcf.gz')),
-            "purple.filterSMALL.vcf_index": find_unique_file(os.path.join(sage_dir, '*.sage.somatic.vcf.gz.tbi')),
+            "purple.filterSMALL.vcf": find_unique_file(
+                os.path.join(sage_dir, '*' + pc.ALT_SAGE_VCF_SUFFIX), sage_vcf
+            ),
+            "purple.filterSMALL.vcf_index": find_unique_file(
+                os.path.join(sage_dir, '*' + pc.ALT_SAGE_VCF_INDEX_SUFFIX), sage_vcf_index
+            ),
             "purple.input_amber_directory": os.path.join(input_bucket, "amber"),
             "purple.input_cobalt_directory": os.path.join(input_bucket, "cobalt"),
             "purple.refFasta": pc.ALT_REF_FASTA,

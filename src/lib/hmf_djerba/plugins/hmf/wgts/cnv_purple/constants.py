@@ -34,6 +34,8 @@ ALT_NORMAL_CRAM = "normal.cram"
 ALT_NORMAL_CRAM_INDEX = ALT_NORMAL_CRAM + ".crai"
 ALT_TUMOUR_CRAM = "tumour.cram"
 ALT_TUMOUR_CRAM_INDEX = ALT_TUMOUR_CRAM + ".crai"
+ALT_SAGE_VCF_SUFFIX = ".sage.somatic.vcf.gz"
+ALT_SAGE_VCF_INDEX_SUFFIX = ALT_SAGE_VCF_SUFFIX + ".tbi"
 
 # data files
 CENTROMERES = "hg38_centromeres.txt"
