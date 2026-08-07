@@ -7,36 +7,21 @@ import logging
 import tempfile
 import shutil
 
-HMF_DJERBA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-HMF_DJERBA_LIB = os.path.join(HMF_DJERBA_ROOT, 'src', 'lib')
-if HMF_DJERBA_LIB not in sys.path:
-    sys.path.insert(0, HMF_DJERBA_LIB)
+from djerba.core.loaders import plugin_loader
+from djerba.core.workspace import workspace
+import djerba.version
 
+class TestPluginLoading(unittest.TestCase):
 
-# Use djerba from the environment
+    TEST_LOG_LEVEL = logging.WARNING
 
-try:
-    from djerba.core.loaders import plugin_loader
-    from djerba.core.workspace import workspace
-    import djerba.version
-    DJERBA_AVAILABLE = True
-except ImportError:
-    DJERBA_AVAILABLE = False
-
-class TestHmfIntegration(unittest.TestCase):
     def setUp(self):
-        if not DJERBA_AVAILABLE:
-            self.skipTest("Djerba not found on PYTHONPATH")
-        self.tmp_dir = tempfile.mkdtemp()
-        self.original_djerba_packages = os.environ.get('DJERBA_PACKAGES')
+        if not os.environ.get('HMF_DJERBA_ROOT'):
+            raise RuntimeError('Must load the hmf-djerba environment module')
+        self.tmp_dir = tempfile.mkdtemp(prefix='hmf_djerba_')
         
     def tearDown(self):
         shutil.rmtree(self.tmp_dir)
-        if self.original_djerba_packages is not None:
-            os.environ['DJERBA_PACKAGES'] = self.original_djerba_packages
-        else:
-            if 'DJERBA_PACKAGES' in os.environ:
-                del os.environ['DJERBA_PACKAGES']
 
     def test_djerba_version(self):
         """Verify we are testing against the expected djerba version"""
@@ -47,8 +32,7 @@ class TestHmfIntegration(unittest.TestCase):
 
     def test_load_hmf_fusion_plugin(self):
         """Verify hmf.fusion plugin can be loaded by djerba"""
-        os.environ['DJERBA_PACKAGES'] = 'hmf_djerba:djerba'
-        loader = plugin_loader(log_level=logging.DEBUG)
+        loader = plugin_loader(log_level=self.TEST_LOG_LEVEL)
         
         # The workspace needs a directory
         ws = workspace(self.tmp_dir)
@@ -61,16 +45,14 @@ class TestHmfIntegration(unittest.TestCase):
 
     def test_load_hmf_genomic_landscape_plugin(self):
         """Verify hmf.genomic_landscape plugin can be loaded by djerba"""
-        os.environ['DJERBA_PACKAGES'] = 'hmf_djerba:djerba'
-        loader = plugin_loader(log_level=logging.DEBUG)
+        loader = plugin_loader(log_level=self.TEST_LOG_LEVEL)
         ws = workspace(self.tmp_dir)
         plugin = loader.load('hmf.genomic_landscape', ws)
         self.assertIsNotNone(plugin)
 
     def test_load_hmf_wgts_plugins(self):
         """Verify hmf.wgts sub-plugins can be loaded"""
-        os.environ['DJERBA_PACKAGES'] = 'hmf_djerba:djerba'
-        loader = plugin_loader(log_level=logging.DEBUG)
+        loader = plugin_loader(log_level=self.TEST_LOG_LEVEL)
         ws = workspace(self.tmp_dir)
         
         plugins_to_test = [
