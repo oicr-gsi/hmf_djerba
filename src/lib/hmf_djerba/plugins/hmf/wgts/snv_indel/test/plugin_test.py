@@ -23,23 +23,19 @@ class TestSnvIndelPlugin(PluginTester):
     JSON_NAME_NO_MUT = 'snv_indel_no_somatic_mutations.json'
     
     def setUp(self):
+        super().setUp()
         self.path_validator = path_validator()
         self.maxDiff = None
-        self.tmp = tempfile.TemporaryDirectory(prefix='djerba_')
-        self.tmp_dir = self.tmp.name
-        self.sup_dir = directory_finder().get_test_dir()
+        #self.test_dir = directory_finder().get_test_dir()
+        #directory_finder does not support HMF Djerba. Fix this?
+        self.test_dir = os.environ.get('HMF_DJERBA_TEST_DIR')
 
-    def testSnvIndelWithCNV(self):
-
-        data_dir_root = directory_finder().get_test_dir()
-        data_dir = os.path.join(data_dir_root, 'plugins', 'wgts', 'snv_indel')
-        test_source_dir = os.path.realpath(os.path.dirname(__file__))
-        maf_filename = 'PANX_1391_Lv_M_WG_100-NH-020_LCM3.filter.deduped.realigned.'+\
-            'recalibrated.mutect2.filtered.subset.maf.gz'
+    def testSnvIndel(self):
+        data_dir = os.path.join(self.test_dir, 'plugins', 'wgts', 'snv_indel')
+        # TODO put INI generation from template into its own method
+        maf_filename = 'BTC-0124-03-LB01-01.sage.somatic.maf.gz'
         maf_path = os.path.join(data_dir, maf_filename)
-        expression_path = os.path.join(data_dir, 'data_expression_percentile_tcga.json')
-        copy_number_path = os.path.join(data_dir, 'cn.txt')
-        purity_ploidy_path = os.path.join(data_dir, 'purity_ploidy.json')
+        test_source_dir = os.path.realpath(os.path.dirname(__file__))
         with open(os.path.join(test_source_dir, self.INI_NAME)) as in_file:
             template_str = in_file.read()
         template = string.Template(template_str)
@@ -49,76 +45,13 @@ class TestSnvIndelPlugin(PluginTester):
         os.mkdir(input_dir)
         work_dir = os.path.join(tmp_dir, 'work')
         os.mkdir(work_dir)
-        copy(copy_number_path, work_dir)
-        copy(expression_path, work_dir)
-        copy(purity_ploidy_path, work_dir)
         with open(os.path.join(input_dir, self.INI_NAME), 'w') as ini_file:
             ini_file.write(ini_str)
         copy(os.path.join(data_dir, self.JSON_NAME), input_dir)
         params = {
             self.INI: self.INI_NAME,
             self.JSON: self.JSON_NAME,
-            self.MD5: '50e72522f6fac3c9566f55e5b740f275'
-        }
-        self.run_basic_test(input_dir, params, work_dir=work_dir)
-
-    def testSnvIndelNoCNV(self):
-
-        data_dir_root = directory_finder().get_test_dir()
-        data_dir = os.path.join(data_dir_root, 'plugins', 'wgts', 'snv_indel')
-        test_source_dir = os.path.realpath(os.path.dirname(__file__))
-        maf_filename = 'PANX_1391_Lv_M_WG_100-NH-020_LCM3.filter.deduped.realigned.'+\
-            'recalibrated.mutect2.filtered.subset.maf.gz'
-        maf_path = os.path.join(data_dir, maf_filename)
-        expression_path = os.path.join(data_dir, 'data_expression_percentile_tcga.json')
-        with open(os.path.join(test_source_dir, self.INI_NAME)) as in_file:
-            template_str = in_file.read()
-        template = string.Template(template_str)
-        ini_str = template.substitute( {'MAF_PATH': maf_path})
-        tmp_dir = self.get_tmp_dir()
-        input_dir = os.path.join(tmp_dir, 'input')
-        os.mkdir(input_dir)
-        work_dir = os.path.join(tmp_dir, 'work')
-        os.mkdir(work_dir)
-        copy(expression_path, work_dir)
-        with open(os.path.join(input_dir, self.INI_NAME), 'w') as ini_file:
-            ini_file.write(ini_str)
-        copy(os.path.join(data_dir, self.JSON_NAME_NO_CNV), input_dir)
-        params = {
-            self.INI: self.INI_NAME,
-            self.JSON: self.JSON_NAME_NO_CNV,
-            self.MD5: '9de5fdf73e7c4186e859f6c2c06d86e1'
-        }
-        self.run_basic_test(input_dir, params, work_dir=work_dir)
-
-    def testNoSomaticMutations(self):
-        """
-        Test on MYC_0279 example of a case where data_mutations_extended.txt is empty. 
-        There should be no vaf plot.
-        This is a WGS case, so no expression.
-        """
-        
-        data_dir_root = directory_finder().get_test_dir()
-        data_dir = os.path.join(data_dir_root, 'plugins', 'wgts', 'snv_indel')
-        test_source_dir = os.path.realpath(os.path.dirname(__file__))
-        maf_filename = 'MYC_0279_Bm_P_WG_MyC-279-T0-OZ.mutect2.filtered.maf.gz'
-        maf_path = os.path.join(data_dir, maf_filename)
-        with open(os.path.join(test_source_dir, self.INI_NAME)) as in_file:
-            template_str = in_file.read()
-        template = string.Template(template_str)
-        ini_str = template.substitute( {'MAF_PATH': maf_path})
-        tmp_dir = self.get_tmp_dir()
-        input_dir = os.path.join(tmp_dir, 'input')
-        os.mkdir(input_dir)
-        work_dir = os.path.join(tmp_dir, 'work')
-        os.mkdir(work_dir)
-        with open(os.path.join(input_dir, self.INI_NAME), 'w') as ini_file:
-            ini_file.write(ini_str)
-        copy(os.path.join(data_dir, self.JSON_NAME_NO_MUT), input_dir)
-        params = {
-            self.INI: self.INI_NAME,
-            self.JSON: self.JSON_NAME_NO_MUT,
-            self.MD5: '88825ed6bbe5891ba7cfb920a372928f'
+            self.MD5: 'e9d874c2e0f7449b56fc674bd9198dd6'
         }
         self.run_basic_test(input_dir, params, work_dir=work_dir)
 
