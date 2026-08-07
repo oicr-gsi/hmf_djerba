@@ -26,6 +26,17 @@ HAS_EXPRESSION_DATA = 'has expression data'
 PERCENT_GENOME_ALTERED = 'percent genome altered'
 TOTAL_VARIANTS = 'total variants'
 
+# purple alternate solutions launcher
+ALT_REF_FASTA = "/.mounts/labs/gsi/src/hmftools/ref_data/GRCh38_hmf/25.1/" \
+    "GRCh38_masked_exclusions_alts_hlas.fasta"
+ALT_REF_FAI = ALT_REF_FASTA + ".fai"
+ALT_NORMAL_CRAM = "normal.cram"
+ALT_NORMAL_CRAM_INDEX = ALT_NORMAL_CRAM + ".crai"
+ALT_TUMOUR_CRAM = "tumour.cram"
+ALT_TUMOUR_CRAM_INDEX = ALT_TUMOUR_CRAM + ".crai"
+ALT_SAGE_VCF_SUFFIX = ".sage.somatic.vcf.gz"
+ALT_SAGE_VCF_INDEX_SUFFIX = ALT_SAGE_VCF_SUFFIX + ".tbi"
+
 # data files
 CENTROMERES = "hg38_centromeres.txt"
 GENEBED =  "gencode_v44_hg38_genes.bed"

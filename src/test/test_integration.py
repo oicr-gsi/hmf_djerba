@@ -41,7 +41,7 @@ class TestHmfIntegration(unittest.TestCase):
     def test_djerba_version(self):
         """Verify we are testing against the expected djerba version"""
         # This version should match what's in requirements.txt
-        expected_version = '1.11.11'
+        expected_version = '1.12.0'
         self.assertEqual(djerba.version.__version__, expected_version, 
                          f"Djerba version mismatch. Expected {expected_version}, found {djerba.version.__version__}")
 

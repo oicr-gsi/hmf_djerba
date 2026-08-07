@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## UNRELEASED 
+- Pinned the Djerba requirement to v1.12.0.
+- Removed the HRD and MSI purity reporting thresholds from the genomic landscape plugin.
+- Updated the pregenerated `purple.alternate.json`.
+
 ## v0.0.4: 2026-08-05
 - Modified genomic landscape plugin to support HRD CHORD output from HMF (cannot currently find the files automatically; must be specified in the config)
 - Modified genomic landscape plugin to support MSI PURPLE output from HMF (cannot currently find the files automatically; must be specified in the config)

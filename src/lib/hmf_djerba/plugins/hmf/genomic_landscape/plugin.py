@@ -3,12 +3,9 @@ Plugin for genomic landscape section.
 """
 import csv
 import os
-import re
 
 import djerba.core.constants as core_constants
-import djerba.plugins.sample.constants as sample_constants
 import hmf_djerba.plugins.hmf.genomic_landscape.constants as glc
-import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as purple_constants
 import djerba.util.oncokb.constants as oncokb_constants
 from djerba.helpers.input_params_helper.helper import main as input_params_helper
 from djerba.mergers.treatment_options_merger.factory import factory as tom_factory
@@ -33,17 +30,15 @@ class main(plugin_base):
     MSI_RESULTS_SUFFIX = '.recalibrated.msi.booted'
     MSI_WORKFLOW = 'msisensor'
 
-    # thresholds to evaluate HRD
-    MIN_HRD_PURITY = 0.5
-    MIN_HRD_PURITY_NOT_FFPE = 0.3
-    MAX_HRD_COVERAGE = 115
+    # CHORD has no purity threshold. Its QC is mutation-count based (>=50 indels, >=30 SVs for subtype)
+    # No purity floor is applied here: cases below 30% purity fail QC upstream and are
+    # never reported, so the plugin would never see them.
 
     def specify_params(self):
         discovered = [
             glc.TUMOUR_ID,
             oncokb_constants.ONCOTREE_CODE,
             glc.TCGA_CODE,
-            glc.PURITY_INPUT,
             glc.MSI_FILE,
             glc.CHORD_PATH,
             glc.SAMPLE_TYPE
@@ -72,14 +67,12 @@ class main(plugin_base):
         config = self.apply_defaults(config)
         w = self.get_config_wrapper(config)
         ipf = input_params_helper.INPUT_PARAMS_FILE
-        ppf = purple_constants.PURITY_PLOIDY
         dsi = core_constants.DEFAULT_SAMPLE_INFO
         dpi = core_constants.DEFAULT_PATH_INFO
         oc = oncokb_constants.ONCOTREE_CODE
         w = self.update_wrapper_if_null(w, ipf, glc.TCGA_CODE)
         w = self.update_wrapper_if_null(w, ipf, glc.SAMPLE_TYPE, fallback=glc.UNKNOWN_SAMPLE_TYPE)
         w = self.update_wrapper_if_null(w, ipf, oc, self.INPUT_PARAMS_ONCOTREE_CODE)
-        w = self.update_wrapper_if_null(w, ppf, purple_constants.PURITY)
         w = self.update_wrapper_if_null(w, dsi, glc.TUMOUR_ID)
         w = self.update_wrapper_if_null(w, dpi, glc.MSI_FILE, glc.MSI_WORKFLOW)
         w = self.update_wrapper_if_null(w, dpi, glc.CHORD_PATH, glc.HRD_WORKFLOW)
@@ -101,9 +94,6 @@ class main(plugin_base):
             work_dir, plugin_data_dir, r_script_dir, tcga_code, biomarkers_path, tumour_id
         )
         
-        # Get coverage for reporting HRD
-        coverage = float(self.workspace.read_maybe_json(sample_constants.QC_SAMPLE_INFO)[sample_constants.COVERAGE_MEAN])
-
         # GET HRD
         hrd = hrd_processor(self.log_level, self.log_path)
         results[glc.BIOMARKERS][glc.HRD] = hrd.run(
@@ -111,15 +101,11 @@ class main(plugin_base):
             wrapper.get_my_string(glc.CHORD_PATH)
         )
 
-        # evaluate HRD and MSI reportability
-        hrd_ok, msi_ok, cant_report_hrd_reason = self.evaluate_reportability(
-            wrapper.get_my_float(glc.PURITY_INPUT),
-            coverage,
-            wrapper.get_my_string(glc.SAMPLE_TYPE),
+        # evaluate HRD reportability
+        hrd_ok, cant_report_hrd_reason = self.evaluate_reportability(
             results[glc.BIOMARKERS][glc.HRD]['Genomic biomarker alteration']
         )
         results[glc.CAN_REPORT_HRD] = hrd_ok
-        results[glc.CAN_REPORT_MSI] = msi_ok
         results[glc.CANT_REPORT_HRD_REASON] = cant_report_hrd_reason
 
         # evaluate biomarkers
@@ -132,7 +118,7 @@ class main(plugin_base):
 
         # Annotate genomic biomarkers for therapy info/merge inputs
         annotated_maf = self.annotate_oncokb(work_dir, wrapper)
-        merge_inputs = self.get_oncokb_merge_inputs(annotated_maf, msi_ok)
+        merge_inputs = self.get_oncokb_merge_inputs(annotated_maf)
         hrd_annotation = hrd.annotate_NCCN(
             results[glc.BIOMARKERS][glc.HRD]['Genomic biomarker alteration'],
             wrapper.get_my_string(oncokb_constants.ONCOTREE_CODE),
@@ -165,39 +151,20 @@ class main(plugin_base):
         annotator.annotate_biomarkers_maf(input_path, output_path)
         return output_path
 
-    def evaluate_reportability(self, purity, coverage, sample_type, hrd_alt):
-        # evaluate reportability for HRD and MSI metrics
-        self.logger.debug('Evaluating reportability for purity and sample type')
-        sample_is_ffpe = False
-        if re.search('FFPE', sample_type.upper()):
-            sample_is_ffpe = True
-            self.logger.debug('FFPE sample detected')
-        elif sample_type == glc.UNKNOWN_SAMPLE_TYPE:
-            self.logger.warning("Unknown sample type in config; assuming non-FFPE sample")
-        else:
-            self.logger.debug('Non-FFPE sample detected')
-        hrd_purity_ok = purity>=self.MIN_HRD_PURITY or (purity>=self.MIN_HRD_PURITY_NOT_FFPE and not sample_is_ffpe)
-        if hrd_purity_ok and coverage <= self.MAX_HRD_COVERAGE and hrd_alt != "Undetermined":
-            hrd_ok = True
-            cant_report_hrd_reason = False
-        elif coverage > self.MAX_HRD_COVERAGE:
-            hrd_ok = False
-            cant_report_hrd_reason = glc.COVERAGE_REASON
-        elif hrd_alt == "Undetermined":
+    def evaluate_reportability(self, hrd_alt):
+        # Report HRD unless CHORD could not make a call, in which case there is no
+        # score or plot to display.
+        # The coverage and purity thresholds were removed in GCGI-1769.
+        if hrd_alt == "Undetermined":
             hrd_ok = False
             cant_report_hrd_reason = glc.CHORD_REASON
         else:
-            hrd_ok = False
-            cant_report_hrd_reason = glc.PURITY_REASON
-        if purity >= 0.5:
-            msi_ok = True
-        else:
-            msi_ok = False
+            hrd_ok = True
+            cant_report_hrd_reason = False
         self.logger.debug("HRD reportable: {0}".format(hrd_ok))
-        self.logger.debug("MSI reportable: {0}".format(msi_ok))
-        return (hrd_ok, msi_ok, cant_report_hrd_reason)
+        return (hrd_ok, cant_report_hrd_reason)
 
-    def get_oncokb_merge_inputs(self, annotated_maf_path, msi_ok):
+    def get_oncokb_merge_inputs(self, annotated_maf_path):
         """
         Read therapy information for merge inputs
         This is derived from the annotated biomarkers file.
@@ -211,9 +178,6 @@ class main(plugin_base):
             reader = csv.DictReader(input_file, delimiter="\t")
             for row_input in reader:
                 alteration = row_input['ALTERATION']
-                if re.search('MSI', alteration.upper()) and not msi_ok:
-                    self.logger.debug('Omitting MSI from therapies: {0}'.format(alteration))
-                    continue
                 # record therapy for all actionable alterations (OncoKB level 4 or higher)
                 therapies = oncokb_levels.parse_actionable_therapies(row_input)
                 for level in therapies.keys():

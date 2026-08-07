@@ -6,20 +6,16 @@ Constants for the Genomic Landscape plugin.
 ONCOTREE_CODE = 'oncotree_code'
 TUMOUR_ID = 'tumour_id'
 TCGA_CODE = 'tcga_code'
-PURITY_INPUT = 'purity'
 DONOR = 'donor'
 MSI_FILE = 'msi_file'
 SAMPLE_TYPE = 'sample_type'
 UNKNOWN_SAMPLE_TYPE = 'Unknown sample type'
 
 # Constants for render
-PURITY_REASON = 'purity'
-COVERAGE_REASON = 'coverage'
 CHORD_REASON = 'chord'
 
 # biomarker reportability
 CAN_REPORT_HRD = 'can_report_hrd'
-CAN_REPORT_MSI = 'can_report_msi'
 CANT_REPORT_HRD_REASON = 'cant_report_hrd_reason'
 
 # For MSI file
