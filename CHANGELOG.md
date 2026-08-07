@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Unreleased
+- GCGI-1771: Update setup.py and add __init__.py files so expression helper is installed correctly
+
 ## v0.0.4: 2026-08-05
 - Modified genomic landscape plugin to support HRD CHORD output from HMF (cannot currently find the files automatically; must be specified in the config)
 - Modified genomic landscape plugin to support MSI PURPLE output from HMF (cannot currently find the files automatically; must be specified in the config)

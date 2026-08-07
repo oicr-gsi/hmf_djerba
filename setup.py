@@ -39,6 +39,7 @@ setup(
     packages=find_packages(where=package_root),
     package_dir={'' : package_root},
     package_data={
+        'hmf_djerba.helpers.hmf.expression_helper': install_wildcards,
         'hmf_djerba.plugins.hmf.fusion': install_wildcards,
         'hmf_djerba.plugins.hmf.genomic_landscape': install_wildcards,
         'hmf_djerba.plugins.hmf.wgts.cnv_purple': install_wildcards,
