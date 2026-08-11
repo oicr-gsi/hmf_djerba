@@ -32,7 +32,7 @@ class TestSnvIndelPlugin(PluginTester):
 
     def testSnvIndel(self):
         data_dir = os.path.join(self.test_dir, 'plugins', 'wgts', 'snv_indel')
-        # TODO put INI generation from template into its own method
+        # TODO put INI generation from template into its own method?
         maf_filename = 'BTC-0124-03-LB01-01.sage.somatic.maf.gz'
         maf_path = os.path.join(data_dir, maf_filename)
         test_source_dir = os.path.realpath(os.path.dirname(__file__))
