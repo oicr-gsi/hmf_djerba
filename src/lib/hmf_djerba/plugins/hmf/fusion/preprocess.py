@@ -59,10 +59,9 @@ class prepare_fusions(logger):
         tumour_id = config_wrapper.get_my_string(core_constants.TUMOUR_ID)
         oncotree_code = config_wrapper.get_my_string(fc.ONCOTREE_CODE)
         oncotree_code = oncotree_code.upper()
-        min_reads = config_wrapper.get_my_int(fc.MIN_FUSION_READS)
         
         self.logger.info("Processing fusion (isofox) results and writing fusion files")
-        df_isofox = self.process_isofox(isofox_path, tumour_id, min_reads)
+        df_isofox = self.process_isofox(isofox_path, tumour_id)
         self.write_fusion_files(df_isofox, oncotree_code)
         self.annotate_fusion_files(config_wrapper)
         self.logger.info("Finished writing fusion files")
@@ -74,7 +73,7 @@ class prepare_fusions(logger):
         df["Sample"] = tumour_id
         return df
         
-    def process_isofox(self, isofox_path, tumour_id, min_reads):
+    def process_isofox(self, isofox_path, tumour_id):
         """
         Process linx information via pandas dataframe operations.
         Processing includes changing column names and writing fusion pairs for merging with mavis.
