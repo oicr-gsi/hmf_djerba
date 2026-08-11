@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 """
-Test of the WGTS SNV/indel plugin
+Test of the HMF WGTS SNV/indel plugin
 """
 
 import os
@@ -19,8 +19,6 @@ class TestSnvIndelPlugin(PluginTester):
 
     INI_NAME = 'snv_indel.ini'
     JSON_NAME = 'snv_indel.json'
-    JSON_NAME_NO_CNV = 'snv_indel_no_cnv.json'
-    JSON_NAME_NO_MUT = 'snv_indel_no_somatic_mutations.json'
     
     def setUp(self):
         super().setUp()
@@ -35,8 +33,7 @@ class TestSnvIndelPlugin(PluginTester):
         # TODO put INI generation from template into its own method?
         maf_filename = 'BTC-0124-03-LB01-01.sage.somatic.maf.gz'
         maf_path = os.path.join(data_dir, maf_filename)
-        test_source_dir = os.path.realpath(os.path.dirname(__file__))
-        with open(os.path.join(test_source_dir, self.INI_NAME)) as in_file:
+        with open(os.path.join(data_dir, self.INI_NAME)) as in_file:
             template_str = in_file.read()
         template = string.Template(template_str)
         ini_str = template.substitute( {'MAF_PATH': maf_path})
