@@ -24,19 +24,39 @@ class main(plugin_base):
         config = self.apply_defaults(config)
         wrapper = self.get_config_wrapper(config)
         key_mapping = {
-            iph.ASSAY: iph.ASSAY,
             oc.ONCOTREE_CODE: iph.ONCOTREE_CODE,
             pc.WHIZBAM_PROJECT: iph.PROJECT
         }
         self.logger.debug("Finding config params")
-        for k, v in key_mapping.items():
-            wrapper = self.update_wrapper_if_null(wrapper, iph.INPUT_PARAMS_FILE, k, v)
+
+        # oncotree code is required for making OncoKB links and annotation
         wrapper = self.update_wrapper_if_null(
-            wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.TUMOUR_ID
+            wrapper,
+            iph.INPUT_PARAMS_FILE,
+            oc.ONCOTREE_CODE,
+            iph.ONCOTREE_CODE
+        )
+        # tumour ID is required for Purple data processing and OncoKB annotation
+        wrapper = self.update_wrapper_if_null(
+            wrapper,
+            core_constants.DEFAULT_SAMPLE_INFO,
+            core_constants.TUMOUR_ID
+        )
+        # optional params with fallback value -- used only for constructing Whizbam links
+        wrapper = self.update_wrapper_if_null(
+            wrapper,
+            iph.INPUT_PARAMS_FILE,
+            pc.WHIZBAM_PROJECT,
+            iph.PROJECT,
+            fallback=pc.DEFAULT
         )
         wrapper = self.update_wrapper_if_null(
-            wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.NORMAL_ID)
-
+            wrapper,
+            core_constants.DEFAULT_SAMPLE_INFO,
+            core_constants.NORMAL_ID,
+            fallback=pc.DEFAULT
+        )
+        # finally configure the Purple directory, which contains our input data
         wrapper = self.update_wrapper_if_null(
             wrapper, core_constants.DEFAULT_PATH_INFO, pc.PURPLE_DIR, pc.PURPLE
         )
@@ -105,7 +125,6 @@ class main(plugin_base):
 
     def specify_params(self):
         discovered = [
-            iph.ASSAY,
             core_constants.TUMOUR_ID,
             core_constants.NORMAL_ID,
             oc.ONCOTREE_CODE,
