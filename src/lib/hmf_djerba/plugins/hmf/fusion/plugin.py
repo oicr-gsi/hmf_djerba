@@ -82,8 +82,6 @@ class main(plugin_base):
         # set defaults
         data_dir = directory_finder(self.log_level, self.log_path).get_data_dir()
         
-        # Set MIN_FUSION_READS after validation!!!!!
-        self.set_ini_default(fc.MIN_FUSION_READS, 0)
         self.set_ini_default(oncokb.APPLY_CACHE, False)
         self.set_ini_default(oncokb.UPDATE_CACHE, False)
         self.set_ini_default(oncokb.ONCOKB_CACHE, self.CACHE_DEFAULT)

@@ -59,10 +59,9 @@ class prepare_fusions(logger):
         tumour_id = config_wrapper.get_my_string(core_constants.TUMOUR_ID)
         oncotree_code = config_wrapper.get_my_string(fc.ONCOTREE_CODE)
         oncotree_code = oncotree_code.upper()
-        min_reads = config_wrapper.get_my_int(fc.MIN_FUSION_READS)
         
         self.logger.info("Processing fusion (isofox) results and writing fusion files")
-        df_isofox = self.process_isofox(isofox_path, tumour_id, min_reads)
+        df_isofox = self.process_isofox(isofox_path, tumour_id)
         self.write_fusion_files(df_isofox, oncotree_code)
         self.annotate_fusion_files(config_wrapper)
         self.logger.info("Finished writing fusion files")
@@ -74,7 +73,7 @@ class prepare_fusions(logger):
         df["Sample"] = tumour_id
         return df
         
-    def process_isofox(self, isofox_path, tumour_id, min_reads):
+    def process_isofox(self, isofox_path, tumour_id):
         """
         Process linx information via pandas dataframe operations.
         Processing includes changing column names and writing fusion pairs for merging with mavis.
@@ -90,8 +89,6 @@ class prepare_fusions(logger):
             df_isofox = self.write_fusion_pairs(df_isofox, "GeneNameUp", "GeneNameDown")
             # Remove duplicated fusions regardless of orientation (Up-Down vs Down-Up).
             df_isofox = self.get_clean_fusions(df_isofox)
-            # Keep fusions with supporting reads larger than min_reads
-            df_isofox = self.filter_and_sortby_read_support(df_isofox, min_reads)
             # Map acronyms to full name for the SVType column & update translocation and inversion notation
             df_isofox = self.process_svtype(df_isofox)
         else:
@@ -118,15 +115,6 @@ class prepare_fusions(logger):
         df = df.drop_duplicates(subset=["dedup_key"], keep="first")
         df = df.drop(columns=["dedup_key"])
 
-        return df
-
-    def filter_and_sortby_read_support(self, df, min_reads):
-        """
-        Filters those entries for which read support is less than 20.
-        Returns a sorted dfframe
-        """
-        df = df[df["TotalFragments"] > min_reads] # > min_reads (as opposed to >= min_reads) was taken from legacy code. 
-        df = df.sort_values(by=["TotalFragments"], ascending=False)
         return df
         
     def process_svtype(self, df):
