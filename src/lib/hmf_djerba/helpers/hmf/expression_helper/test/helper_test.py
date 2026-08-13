@@ -8,21 +8,47 @@ import logging
 import os
 import unittest
 from configparser import ConfigParser
+from shutil import copy
 from djerba.core.loaders import helper_loader
 from djerba.core.workspace import workspace
 from hmf_djerba.plugins.plugin_tester_hmf import PluginTesterHMF
 
 
+
 class TestExpressionHelper(PluginTesterHMF):
 
     INI_NAME = 'expression_helper.ini'
-    JSON_NAME = 'expression_helper.json'
+    INI_NAME_MINIMAL = 'expression_helper.ini'
+    INI_NAME_EXPECTED = 'expression_helper.ini'
     HELPER_NAME = 'hmf.expression_helper'
     PYTHON_VERSION = 'python3.10'
+
+    # Note: The test data on Bitbucket contains an empty JSON file with this name,
+    # for compatibility with PluginTesterHMF
+    JSON_NAME = 'expression_helper.json'
     
     def setUp(self):
         super().setUp()
         self.data_dir = os.path.join(self.test_dir, 'helpers', 'expression_helper')        
+
+    def testConfigure(self):
+        tmp_dir = self.get_tmp_dir() # inherited from TestBase
+        work_dir = os.path.join(tmp_dir, self.WORK_NAME)
+        os.mkdir(work_dir)
+        sample_info_path = os.path.join(self.data_dir, 'sample_info.json')
+        copy(sample_info_path, work_dir)
+        # helper expects this file to be present, even though we configure input manually
+        provenance_subset_path = os.path.join(self.data_dir, 'provenance_subset.tsv.gz')
+        copy(provenance_subset_path, work_dir)
+        ws = workspace(work_dir)
+        loader = helper_loader(logging.ERROR)
+        cp = ConfigParser()
+        cp.read(os.path.join(self.data_dir, self.INI_NAME_MINIMAL))
+        # load the helper and run its 'configure' method
+        configured = loader.load(self.HELPER_NAME, ws).configure(cp)
+        expected = ConfigParser()
+        expected.read(os.path.join(self.data_dir, self.INI_NAME_EXPECTED))
+        self.assertEqual(configured, expected)
 
     def testExtract(self):
         # construct the input paths
