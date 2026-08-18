@@ -18,8 +18,8 @@ from hmf_djerba.plugins.plugin_tester_hmf import PluginTesterHMF
 class TestExpressionHelper(PluginTesterHMF):
 
     INI_NAME = 'expression_helper.ini'
-    INI_NAME_MINIMAL = 'expression_helper.ini'
-    INI_NAME_EXPECTED = 'expression_helper.ini'
+    INI_NAME_MINIMAL = 'expression_helper_minimal.ini'
+    INI_NAME_EXPECTED = 'expression_helper_expected.ini'
     HELPER_NAME = 'hmf.expression_helper'
     PYTHON_VERSION = 'python3.10'
 
