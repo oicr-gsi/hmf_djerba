@@ -4,6 +4,7 @@ import os
 import string
 from shutil import copy
 from djerba.plugins.plugin_tester import PluginTester
+from hmf_djerba.util.environment import hmf_directory_finder
 
 class PluginTesterHMF(PluginTester):
 
@@ -16,7 +17,7 @@ class PluginTesterHMF(PluginTester):
 
     def setUp(self):
         super().setUp()
-        self.test_dir = os.environ.get('HMF_DJERBA_TEST_DIR')
+        self.test_dir = hmf_directory_finder().get_hmf_test_dir()
 
     def writeTestFiles(self, data_dir, mapping):
         # write INI and JSON files to the working test directory

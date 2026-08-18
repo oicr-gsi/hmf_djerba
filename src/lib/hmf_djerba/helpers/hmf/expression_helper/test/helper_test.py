@@ -12,7 +12,7 @@ from shutil import copy
 from djerba.core.loaders import helper_loader
 from djerba.core.workspace import workspace
 from hmf_djerba.plugins.plugin_tester_hmf import PluginTesterHMF
-
+from hmf_djerba.util.environment import hmf_directory_finder
 
 
 class TestExpressionHelper(PluginTesterHMF):
@@ -29,7 +29,7 @@ class TestExpressionHelper(PluginTesterHMF):
     
     def setUp(self):
         super().setUp()
-        self.data_dir = os.path.join(self.test_dir, 'helpers', 'expression_helper')        
+        self.data_dir = os.path.join(self.test_dir, 'helpers', 'expression_helper')
 
     def testConfigure(self):
         tmp_dir = self.get_tmp_dir() # inherited from TestBase
@@ -52,7 +52,7 @@ class TestExpressionHelper(PluginTesterHMF):
 
     def testExtract(self):
         # construct the input paths
-        hmf_djerba_root = os.environ.get('HMF_DJERBA_ROOT')
+        hmf_djerba_root = hmf_directory_finder().get_hmf_root_dir()
         enscon_path = os.path.join(hmf_djerba_root, 'lib', self.PYTHON_VERSION,
                                    'site-packages', 'hmf_djerba', 'helpers', 'hmf',
                                    'expression_helper', 'ensemble_conversion_hg38.txt')
