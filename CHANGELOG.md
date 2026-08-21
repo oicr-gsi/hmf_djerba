@@ -1,7 +1,8 @@
 # CHANGELOG
 
-## Unreleased
-- Pinned the Djerba requirement to v1.12.0.
+## v0.0.5: 2026-08-21
+- Pinned the Djerba requirement to v1.13.0.
+- Changed Python version requirement to >=3.13.0.
 - Removed the HRD and MSI purity reporting thresholds from the genomic landscape plugin.
 - Updated the pregenerated `purple.alternate.json`.
 - Fixes to enable the expression helper to install correctly.

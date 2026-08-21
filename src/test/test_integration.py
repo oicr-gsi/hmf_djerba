@@ -9,7 +9,7 @@ import shutil
 
 from djerba.core.loaders import plugin_loader
 from djerba.core.workspace import workspace
-import djerba.version
+from djerba.version import get_djerba_version
 
 class TestPluginLoading(unittest.TestCase):
 
@@ -26,9 +26,10 @@ class TestPluginLoading(unittest.TestCase):
     def test_djerba_version(self):
         """Verify we are testing against the expected djerba version"""
         # This version should match what's in requirements.txt
-        expected_version = '1.12.0'
-        self.assertEqual(djerba.version.__version__, expected_version, 
-                         f"Djerba version mismatch. Expected {expected_version}, found {djerba.version.__version__}")
+        expected_version = '1.13.0'
+        found_version = get_djerba_version()
+        self.assertEqual(found_version, expected_version,
+                         f"Djerba version mismatch. Expected {expected_version}, found {found_version}")
 
     def test_load_hmf_fusion_plugin(self):
         """Verify hmf.fusion plugin can be loaded by djerba"""

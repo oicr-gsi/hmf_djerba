@@ -21,7 +21,7 @@ class TestExpressionHelper(PluginTesterHMF):
     INI_NAME_MINIMAL = 'expression_helper_minimal.ini'
     INI_NAME_EXPECTED = 'expression_helper_expected.ini'
     HELPER_NAME = 'hmf.expression_helper'
-    PYTHON_VERSION = 'python3.10'
+    PYTHON_VERSION = 'python3.13'
 
     # Note: The test data on Bitbucket contains an empty JSON file with this name,
     # for compatibility with PluginTesterHMF
@@ -66,6 +66,12 @@ class TestExpressionHelper(PluginTesterHMF):
         loader = helper_loader(logging.ERROR)
         cp = ConfigParser()
         cp.read(os.path.join(input_dir, self.INI_NAME))
+        # check the Python version is up to date
+        enscon = cp.get('hmf.expression_helper', 'enscon')
+        if not os.path.exists(enscon):
+            msg = "Ensembl conversion file '{0}' does not exist; ".format(enscon)+\
+                "check PYTHON_VERSION variable in TestExpressionHelper"
+            raise RuntimeError(msg)
         # load the helper and run its 'extract' method
         loader.load(self.HELPER_NAME, ws).extract(cp)
         expected = {
