@@ -52,3 +52,5 @@ WHIZBAM_PROJECT = 'whizbam_project'
 ALT = 'Alteration'
 NA = 'NA'
 
+# placeholder value for test INI parameters
+DEFAULT = 'HMF cnv_purple default'

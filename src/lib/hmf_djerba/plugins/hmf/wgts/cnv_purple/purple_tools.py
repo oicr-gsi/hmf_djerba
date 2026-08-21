@@ -696,6 +696,11 @@ class purple_processor(logger):
             return files[0]
 
         sage_dir = os.path.join(input_bucket, "sage", "somatic")
+        if not os.path.exists(sage_dir):
+            msg = "Expected SAGE directory '{0}' ".format(sage_dir)+\
+                "does not exist, alternate purple launch config will use fallback values"
+            self.logger.warning(msg)
+
         tumour_library = os.path.basename(os.path.normpath(purple_dir)).split('.')[0]
         sage_vcf = os.path.join(sage_dir, tumour_library + pc.ALT_SAGE_VCF_SUFFIX)
         sage_vcf_index = os.path.join(sage_dir, tumour_library + pc.ALT_SAGE_VCF_INDEX_SUFFIX)
