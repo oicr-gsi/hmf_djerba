@@ -13,14 +13,14 @@ class TestFusion(PluginTesterHMF):
 
     def testFusion(self):
         data_dir = os.path.join(self.test_dir, 'plugins', 'fusion')
-        isf_filename = 'BTC-0124-03-LB03-01.isf.pass_fusions.csv' # isofox
+        isf_filename = 'BTC_0166_02_LB02-01.isf.pass_fusions.csv' # isofox
         isf_path = os.path.join(data_dir, isf_filename)
         mapping = {'ISOFOX_PATH': isf_path}
         input_dir, work_dir = self.writeTestFiles(data_dir, mapping)
         params = {
             self.INI: self.INI_NAME,
             self.JSON: self.JSON_NAME,
-            self.MD5: 'c3963040dabfa2a06823b42fd6b1bed7'
+            self.MD5: 'abdfe9c682239b3c9441cdd934b3c800'
         }
         self.run_basic_test(input_dir, params, work_dir=work_dir)
 
