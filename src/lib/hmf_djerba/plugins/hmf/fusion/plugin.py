@@ -28,16 +28,18 @@ class main(plugin_base):
     PRIORITY = 900
     PLUGIN_VERSION = '1.1.0'
     CACHE_DEFAULT = '/.mounts/labs/CGI/gsi/tools/djerba/oncokb_cache/scratch'
+    PLACEHOLDER_PROJECT = 'placeholder_project'
 
     def configure(self, config):
         config = self.apply_defaults(config)
         wrapper = self.get_config_wrapper(config)
         wrapper = self.update_file_if_null(wrapper, fc.ISOFOX_PATH, 'isofox')
         work_dir = self.workspace.get_work_dir()
-        self.update_wrapper_if_null(wrapper, core_constants.DEFAULT_SAMPLE_INFO, fc.WHIZBAM_PROJECT, 'project')
         self.update_wrapper_if_null(wrapper, 'input_params.json', fc.ONCOTREE_CODE, 'oncotree_code')
         self.update_wrapper_if_null(wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.TUMOUR_ID, core_constants.TUMOUR_ID)
-        self.update_wrapper_if_null(wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.PROJECT, core_constants.PROJECT)
+        self.update_wrapper_if_null(wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.PROJECT, core_constants.PROJECT, fallback=self.PLACEHOLDER_PROJECT)
+        self.update_wrapper_if_null(wrapper, core_constants.DEFAULT_SAMPLE_INFO, fc.WHIZBAM_PROJECT, 'project', fallback=wrapper.get_my_string(core_constants.PROJECT))
+
 
         return wrapper.get_config()
 
@@ -82,8 +84,6 @@ class main(plugin_base):
         # set defaults
         data_dir = directory_finder(self.log_level, self.log_path).get_data_dir()
         
-        # Set MIN_FUSION_READS after validation!!!!!
-        self.set_ini_default(fc.MIN_FUSION_READS, 0)
         self.set_ini_default(oncokb.APPLY_CACHE, False)
         self.set_ini_default(oncokb.UPDATE_CACHE, False)
         self.set_ini_default(oncokb.ONCOKB_CACHE, self.CACHE_DEFAULT)

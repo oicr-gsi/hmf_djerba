@@ -3,8 +3,6 @@ a plugin for WGTS CNV, based on PURPLE
 """
 
 # IMPORTS
-import os
-
 import djerba.core.constants as core_constants
 import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as pc
 import djerba.util.oncokb.constants as oc
@@ -26,19 +24,39 @@ class main(plugin_base):
         config = self.apply_defaults(config)
         wrapper = self.get_config_wrapper(config)
         key_mapping = {
-            iph.ASSAY: iph.ASSAY,
             oc.ONCOTREE_CODE: iph.ONCOTREE_CODE,
             pc.WHIZBAM_PROJECT: iph.PROJECT
         }
         self.logger.debug("Finding config params")
-        for k, v in key_mapping.items():
-            wrapper = self.update_wrapper_if_null(wrapper, iph.INPUT_PARAMS_FILE, k, v)
+
+        # oncotree code is required for making OncoKB links and annotation
         wrapper = self.update_wrapper_if_null(
-            wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.TUMOUR_ID
+            wrapper,
+            iph.INPUT_PARAMS_FILE,
+            oc.ONCOTREE_CODE,
+            iph.ONCOTREE_CODE
+        )
+        # tumour ID is required for Purple data processing and OncoKB annotation
+        wrapper = self.update_wrapper_if_null(
+            wrapper,
+            core_constants.DEFAULT_SAMPLE_INFO,
+            core_constants.TUMOUR_ID
+        )
+        # optional params with fallback value -- used only for constructing Whizbam links
+        wrapper = self.update_wrapper_if_null(
+            wrapper,
+            iph.INPUT_PARAMS_FILE,
+            pc.WHIZBAM_PROJECT,
+            iph.PROJECT,
+            fallback=pc.DEFAULT
         )
         wrapper = self.update_wrapper_if_null(
-            wrapper, core_constants.DEFAULT_SAMPLE_INFO, core_constants.NORMAL_ID)
-
+            wrapper,
+            core_constants.DEFAULT_SAMPLE_INFO,
+            core_constants.NORMAL_ID,
+            fallback=pc.DEFAULT
+        )
+        # finally configure the Purple directory, which contains our input data
         wrapper = self.update_wrapper_if_null(
             wrapper, core_constants.DEFAULT_PATH_INFO, pc.PURPLE_DIR, pc.PURPLE
         )
@@ -57,7 +75,6 @@ class main(plugin_base):
         self.logger.debug("Read purity/ploidy from workspace: {0}".format(purity_ploidy))
         ploidy = purity_ploidy[pc.PLOIDY]
         tumour_id = wrapper.get_my_string(core_constants.TUMOUR_ID)
-        normal_id = wrapper.get_my_string(core_constants.NORMAL_ID)
 
         # process purple files
         self.logger.debug("Starting purple data processing")
@@ -82,16 +99,11 @@ class main(plugin_base):
         processor.write_copy_states(tumour_id)
 
         # write alternate solutions launcher JSON
-        if os.path.exists(os.path.join(work_dir, core_constants.DEFAULT_PATH_INFO)):
-            self.logger.debug("Writing alternate solutions JSON")
-            purple_alternate = processor.write_purple_alternate_launcher(
-                self.workspace.read_json(core_constants.DEFAULT_PATH_INFO),
-                wrapper.get_my_string(pc.PURPLE_DIR),
-                normal_id,
-                tumour_id)
-            self.workspace.write_json(pc.PURPLE_ALT, purple_alternate)
-        else:
-            self.logger.debug("Omitting alternate solutions (path info not available)")
+        self.logger.debug("Writing alternate solutions JSON")
+        purple_alternate = processor.write_purple_alternate_launcher(
+            wrapper.get_my_string(pc.PURPLE_DIR)
+        )
+        self.workspace.write_json(pc.PURPLE_ALT, purple_alternate)
 
         # run oncokb annotator
         self.logger.debug("Finding OncoKB variant annotation")
@@ -113,7 +125,6 @@ class main(plugin_base):
 
     def specify_params(self):
         discovered = [
-            iph.ASSAY,
             core_constants.TUMOUR_ID,
             core_constants.NORMAL_ID,
             oc.ONCOTREE_CODE,

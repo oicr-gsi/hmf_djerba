@@ -1,7 +1,12 @@
 # CHANGELOG
 
-## Unreleased
-- GCGI-1771: Update setup.py and add __init__.py files so expression helper is installed correctly
+## v0.0.5: 2026-08-24
+- Pinned the Djerba requirement to v1.13.0.
+- Changed requirements to Python >=3.13.0 and oncokb-annotator >=4.0.0
+- Removed the HRD and MSI purity reporting thresholds from the genomic landscape plugin.
+- Updated the pregenerated `purple.alternate.json`.
+- Fixes to enable the expression helper to install correctly.
+- GCGI-1770: Add unit tests for the `snv_indel`, `cnv_purple`, and `fusion` plugins; and for the `expression_helper`
 
 ## v0.0.4: 2026-08-05
 - Modified genomic landscape plugin to support HRD CHORD output from HMF (cannot currently find the files automatically; must be specified in the config)

@@ -676,41 +676,49 @@ class purple_processor(logger):
         with open(os.path.join(self.work_dir, self.COPY_STATE_FILE), 'w') as out_file:
             out_file.write(json.dumps(states, sort_keys=True, indent=4))
 
-    def write_purple_alternate_launcher(self, path_info, purple_dir, normal_id, tumour_id):
+    def write_purple_alternate_launcher(self, purple_dir):
         # input_bucket is derived from purple_dir
         if not purple_dir:
             self.logger.warning("Purple directory is not valid")
             return {}
-        if not normal_id:
-            self.logger.warning("Normal ID is not valid")
-            return {}
-        if not tumour_id:
-            self.logger.warning("Tumor ID is not valid")
-            return {}
 
         input_bucket = os.path.dirname(purple_dir)
-        self.logger.debug(f"path_info received: {path_info}, purple_dir received: {purple_dir}")
-        self.logger.debug(f"normalID received: {normal_id}, tumorID received: {tumour_id}")
+        self.logger.debug(f"purple_dir received: {purple_dir}")
 
-        def find_unique_file(pattern):
+        def find_unique_file(pattern, fallback):
             files = glob.glob(pattern)
             if not files:
-                self.logger.warning(f"No file found for pattern: {pattern}")
-                return None
+                msg = "No file found for pattern {0}, falling back to {1}"
+                self.logger.warning(msg.format(pattern, fallback))
+                return fallback
             if len(files) > 1:
                 self.logger.warning(f"Multiple files found for pattern {pattern}, using first: {files[0]}")
             return files[0]
 
+        sage_dir = os.path.join(input_bucket, "sage", "somatic")
+        if not os.path.exists(sage_dir):
+            msg = "Expected SAGE directory '{0}' ".format(sage_dir)+\
+                "does not exist, alternate purple launch config will use fallback values"
+            self.logger.warning(msg)
+
+        tumour_library = os.path.basename(os.path.normpath(purple_dir)).split('.')[0]
+        sage_vcf = os.path.join(sage_dir, tumour_library + pc.ALT_SAGE_VCF_SUFFIX)
+        sage_vcf_index = os.path.join(sage_dir, tumour_library + pc.ALT_SAGE_VCF_INDEX_SUFFIX)
         purple_paths = {
-            "purple.normal_bam": find_unique_file(os.path.join(input_bucket, normal_id, "aligner", "*.bam")),
-            "purple.normal_bai": find_unique_file(os.path.join(input_bucket, normal_id, "aligner", "*.bam.bai")),
-            "purple.tumour_bam": find_unique_file(os.path.join(input_bucket, tumour_id, "aligner", "*.bam")),
-            "purple.tumour_bai": find_unique_file(os.path.join(input_bucket, tumour_id, "aligner", "*.bam.bai")),
-            "purple.filterSMALL.vcf": find_unique_file(os.path.join(purple_dir, '*purple.somatic.vcf.gz')),
-            "purple.filterSMALL.vcf_index": find_unique_file(os.path.join(purple_dir, '*purple.somatic.vcf.gz.tbi')),
-            "purple.filterSV.vcf": find_unique_file(os.path.join(purple_dir, '*purple.sv.vcf.gz')),
-            "purple.input_amber_directory": os.path.join(input_bucket,"amber"),
+            "purple.normal": pc.ALT_NORMAL_CRAM,
+            "purple.normal_index": pc.ALT_NORMAL_CRAM_INDEX,
+            "purple.tumour": pc.ALT_TUMOUR_CRAM,
+            "purple.tumour_index": pc.ALT_TUMOUR_CRAM_INDEX,
+            "purple.filterSMALL.vcf": find_unique_file(
+                os.path.join(sage_dir, '*' + pc.ALT_SAGE_VCF_SUFFIX), sage_vcf
+            ),
+            "purple.filterSMALL.vcf_index": find_unique_file(
+                os.path.join(sage_dir, '*' + pc.ALT_SAGE_VCF_INDEX_SUFFIX), sage_vcf_index
+            ),
+            "purple.input_amber_directory": os.path.join(input_bucket, "amber"),
             "purple.input_cobalt_directory": os.path.join(input_bucket, "cobalt"),
+            "purple.refFasta": pc.ALT_REF_FASTA,
+            "purple.refFai": pc.ALT_REF_FAI,
             "purple.runPURPLE.min_ploidy": str(0),
             "purple.runPURPLE.max_ploidy": str(8),
             "purple.runPURPLE.min_purity": str(0),

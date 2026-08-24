@@ -45,6 +45,7 @@ setup(
         'hmf_djerba.plugins.hmf.wgts.cnv_purple': install_wildcards,
         'hmf_djerba.plugins.hmf.wgts.common.cnv': install_wildcards,
         'hmf_djerba.plugins.hmf.wgts.snv_indel': install_wildcards,
+        'hmf_djerba.helpers.hmf.expression_helper': install_wildcards,
     },
     install_requires=[
         'djerba',
@@ -66,7 +67,7 @@ setup(
         'seaborn',
         'statsmodels',
     ],
-    python_requires='>=3.10.6',
+    python_requires='>=3.13.0',
     author="Iain Bancarz",
     author_email="ibancarz [at] oicr [dot] on [dot] ca",
     description="Create reports from metadata and workflow output",

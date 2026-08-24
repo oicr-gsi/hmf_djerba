@@ -160,7 +160,7 @@ class hrd_processor(logger):
         """
         HRD remarks for the undetermined HRD case are given as:
         
-        CHORD requires >=100 indels to accurately determine whether a sample is HRD. If this criterion is not met, hr_status will be cannot_be_determined and remarks_hr_status will be "<50 indels".
+        CHORD requires >=50 indels to accurately determine whether a sample is HRD. If this criterion is not met, hr_status will be cannot_be_determined and remarks_hr_status will be "<50 indels".
     
         CHORD cannot be applied to MSI samples. If an MSI sample is detected, hr_status will be cannot_be_determined and remarks_hr_status will be "Has MSI (>14000 indel.rep)"
     
@@ -174,8 +174,14 @@ class hrd_processor(logger):
                       "Has MSI (>14000 indel.rep)": "sample has MSI", \
                       "<30 SVs": "sample has <30 SVs"}
 
-        # Default to "Unknown" as a reason if it's something else:
-        conversion = dictionary.get(hrd_remarks, "Unknown")
+        # Fall back to the raw CHORD remark, so an unrecognized value can be
+        # diagnosed from the report instead of being reported as "Unknown"
+        conversion = dictionary.get(hrd_remarks)
+        if conversion is None:
+            self.logger.warning(
+                "Unrecognized CHORD remarks_hr_status: '{0}'".format(hrd_remarks)
+            )
+            conversion = "unrecognized CHORD remark '{0}'".format(hrd_remarks)
         return conversion
 
     def run(self, work_dir, hrd_path):

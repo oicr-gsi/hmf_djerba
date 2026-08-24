@@ -165,7 +165,7 @@ class main(helper_base):
                 len(set(missing_gene_ids)),
                 gep_path
             )
-            self.logger.warn(msg)
+            self.logger.warning(msg)
         return self.workspace.abs_path(out_file_name)
 
     def specify_params(self):

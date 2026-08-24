@@ -8,7 +8,6 @@ MAKO_TEMPLATE_NAME = 'fusion_template.html'
 ISOFOX_PATH = 'isofox_path'
 ONCOTREE_CODE = 'oncotree_code'
 WHIZBAM_PROJECT = 'whizbam_project'
-MIN_FUSION_READS = 'minimum fusion reads'
 
 # JSON results keys
 TOTAL_VARIANTS = "Total variants"
