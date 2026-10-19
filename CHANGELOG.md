@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Unreleased
+- Updated `OncoTree.json` in the genomic landscape plugin to `oncotree_2025_10_03`, the latest stable version.
+
 ## v0.0.5: 2026-08-24
 - Pinned the Djerba requirement to v1.13.0.
 - Changed requirements to Python >=3.13.0 and oncokb-annotator >=4.0.0
