@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Unreleased
+- Fusion plugin reads the Isofox 2.x fusions file (tsv) as well as the Isofox 1.x csv.
+
 ## v0.0.5: 2026-08-24
 - Pinned the Djerba requirement to v1.13.0.
 - Changed requirements to Python >=3.13.0 and oncokb-annotator >=4.0.0

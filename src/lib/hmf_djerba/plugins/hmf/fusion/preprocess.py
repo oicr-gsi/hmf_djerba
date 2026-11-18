@@ -73,6 +73,22 @@ class prepare_fusions(logger):
         df["Sample"] = tumour_id
         return df
         
+    def read_isofox(self, isofox_path):
+        """
+        Reads the isofox pass fusions file: csv from Isofox 1.x, or tsv from Isofox 2.x.
+        Isofox 2.x columns are renamed to the Isofox 1.x names used in this plugin.
+        """
+        with open(isofox_path) as isofox_file:
+            sep = '\t' if '\t' in isofox_file.readline() else ','
+        df = pd.read_csv(isofox_path, sep = sep)
+        if "Name" in df.columns and "GeneNameUp" not in df.columns:
+            genes = df["Name"].str.split("_", n=1)
+            df["GeneNameUp"] = genes.str[0].replace("", np.nan)
+            df["GeneNameDown"] = genes.str[1].replace("", np.nan)
+            df = df.rename(columns={"ChromosomeUp": "ChrUp", "ChromosomeDown": "ChrDown", "SvType": "SVType"})
+            df["TotalFragments"] = df["SplitFrags"] + df["RealignedFrags"] + df["DiscordantFrags"]
+        return df
+
     def process_isofox(self, isofox_path, tumour_id):
         """
         Process linx information via pandas dataframe operations.
@@ -82,7 +98,7 @@ class prepare_fusions(logger):
         # Get the data_frame if the isofox path is not completely empty:
         # Note: the code should work even if there is only a header.
         if os.path.getsize(isofox_path) != 0:
-            df_isofox = pd.read_csv(isofox_path, sep = ',') # isofox output csv file, while linx output tsv file
+            df_isofox = self.read_isofox(isofox_path)
             # First a column with tumor id
             df_isofox = self.add_tumour_id(df_isofox, tumour_id)    
             # Add fusion tuples as well, for merging with mavis

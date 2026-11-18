@@ -41,7 +41,9 @@ The plugin is composed of the following files:
 
 The function that preprocesses the isofox file is preprocess.py/process_isofox
 
-The following filtering steps are applied to the isofox output ${sample_name_tumour}.isf.pass_fusions.csv:
+The isofox output is read by preprocess.py/read_isofox. It accepts ${sample_name_tumour}.isf.pass_fusions.csv from Isofox 1.x and the tab-separated ${sample_name_tumour}.isf.pass_fusions.tsv from Isofox 2.x (oncoanalyser 3.0). Isofox 2.x columns are renamed to the Isofox 1.x names used below: "Name" is split into "GeneNameUp" and "GeneNameDown", "ChromosomeUp"/"ChromosomeDown" become "ChrUp"/"ChrDown", "SvType" becomes "SVType", and "TotalFragments" is the sum of "SplitFrags", "RealignedFrags" and "DiscordantFrags".
+
+The following filtering steps are then applied:
 1. **self.add_tumour_id**: A column called "Sample" is added. This is a column with the tumour ID for every row.
 2. **self.write_fusion_pairs**: A column is made to concatenate gene1-gene2 based on "GeneNameUp" and "GeneNameDown".
 3. **self.get_clean_fusions**: Deduplicate fusions regardless of orientation (Up-Down vs Down-Up). The entry with the highest "TotalFragments" will be kept.
