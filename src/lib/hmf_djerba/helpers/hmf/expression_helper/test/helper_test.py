@@ -11,6 +11,7 @@ from configparser import ConfigParser
 from shutil import copy
 from djerba.core.loaders import helper_loader
 from djerba.core.workspace import workspace
+from hmf_djerba.helpers.hmf.expression_helper.helper import main as helper_main
 from hmf_djerba.plugins.plugin_tester_hmf import PluginTesterHMF
 from hmf_djerba.util.environment import hmf_directory_finder
 
@@ -72,6 +73,10 @@ class TestExpressionHelper(PluginTesterHMF):
             msg = "Ensembl conversion file '{0}' does not exist; ".format(enscon)+\
                 "check PYTHON_VERSION variable in TestExpressionHelper"
             raise RuntimeError(msg)
+        # TCGA Ensembl conversion file is not in the test data INI; take it from the source directory
+        helper_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) # go 2 directories up
+        tcga_enscon = os.path.join(helper_dir, helper_main.TCGA_ENSCON_DEFAULT)
+        cp.set(self.HELPER_NAME, helper_main.TCGA_ENSCON_KEY, tcga_enscon)
         # load the helper and run its 'extract' method
         loader.load(self.HELPER_NAME, ws).extract(cp)
         expected = {
