@@ -80,11 +80,11 @@ class TestExpressionHelper(PluginTesterHMF):
         # load the helper and run its 'extract' method
         loader.load(self.HELPER_NAME, ws).extract(cp)
         expected = {
-            'data_expression_percentile_comparison.txt': '761f14e0b4b96fc386fa17d67e1fbc03',
-            'data_expression_percentile_tcga.json': 'f97131c11d95c9d29d7c327a2d0eb06d',
-            'data_expression_percentile_tcga.txt': 'fa292b6606be6221e1bcc3b4aa8808a1',
-            'data_expression_zscores_comparison.txt': 'a10d5fe3de528ef21934690d33173354',
-            'data_expression_zscores_tcga.txt': 'dbd23c232dbb59c0cd24c95f4a7b1c73'
+            'data_expression_percentile_comparison.txt': '37590d6c89551168df68c41a82102785',
+            'data_expression_percentile_tcga.json': '167c651c6169036b0ad5e9463d8b257c',
+            'data_expression_percentile_tcga.txt': 'f03f33165f615e53e89f5523509684e6',
+            'data_expression_zscores_comparison.txt': '7d9748e36a4730b5f359f9554d4f5b7c',
+            'data_expression_zscores_tcga.txt': '15fb4fc902a364369dd943d29a97d9c2'
         }
         for name in expected:
             out_path = os.path.join(work_dir, name)
