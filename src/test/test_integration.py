@@ -26,7 +26,7 @@ class TestPluginLoading(unittest.TestCase):
     def test_djerba_version(self):
         """Verify we are testing against the expected djerba version"""
         # This version should match what's in requirements.txt
-        expected_version = '1.13.0'
+        expected_version = '1.13.2'
         found_version = get_djerba_version()
         self.assertEqual(found_version, expected_version,
                          f"Djerba version mismatch. Expected {expected_version}, found {found_version}")

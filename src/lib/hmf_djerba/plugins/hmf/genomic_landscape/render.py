@@ -12,18 +12,21 @@ class html_builder:
         cell = template.format(biomarker,plot)
         return(cell)
 
-    def biomarker_table_rows(self, biomarkers, can_report_hrd, cant_report_hrd_reason):
+    def biomarker_table_rows(self, biomarkers, can_report_hrd, cant_report_hrd_reason, can_report_msi):
         rows = []
         for marker, info in biomarkers.items():
             if marker == "HRD" and not can_report_hrd:
-                if cant_report_hrd_reason == constants.CHORD_REASON:
+                if cant_report_hrd_reason == constants.PURITY_REASON:
+                    text = "Cancer cell content below threshold to evaluate HRD; " + \
+                        "must be &#8805;50&#37; for FFPE samples, &#8805;30&#37; otherwise"
+                elif cant_report_hrd_reason == constants.CHORD_REASON:
                     # CHORD could not make a call, so there is no score or plot to show
                     text = "HRD score could not be determined (reason: {0}).".format(
                         info[constants.METRIC_TEXT]
                     )
                 else:
-                    # evaluate_reportability() in the plugin can only ever set
-                    # CHORD_REASON, so any other value means the plugin and this
+                    # evaluate_reportability() in the plugin can only set PURITY_REASON
+                    # or CHORD_REASON, so any other value means the plugin and this
                     # renderer have gone out of sync
                     msg = "Unexpected reason for not reporting HRD: '{0}'".format(
                         cant_report_hrd_reason
@@ -33,6 +36,13 @@ class html_builder:
                     hb.td(info[constants.ALT]),
                     hb.td("NA"),
                     hb.td(text)
+                ]
+
+            elif marker == "MSI" and not can_report_msi:
+                cells = [
+                    hb.td(info[constants.ALT]),
+                    hb.td("NA"),
+                    hb.td("Cancer cell content below threshold to call MS score; must be &#8805;50&#37;")
                 ]
 
             elif marker == "MSI" and info[constants.METRIC_ALTERATION] == "UNKNOWN":
