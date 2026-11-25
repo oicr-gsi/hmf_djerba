@@ -1,7 +1,9 @@
 # CHANGELOG
 
 ## UNRELEASED
-- Pinned the Djerba requirement to v1.13.2, and ported the relevant changes from Djerba v1.13.2:
+- Pinned the Djerba requirement to v1.13.3, and ported the relevant changes from Djerba v1.13.2 and v1.13.3:
+- Genomic landscape plugin: updated `OncoTree.json` to `oncotree_2025_10_03`.
+- Genomic landscape plugin: support merged `tcga_code` values (e.g. `luad|lusc`).
 - Expression helper: transform GEP TPM values to log2(TPM + 0.001), rounded to 4 decimals, before comparison with RODiC TPM-data, which is stored on that scale.
 - Expression helper: genes with no variation in the TCGA pool are reported as NA instead of the 50th percentile.
 - Expression helper: genes whose symbol is not in the TCGA comparator are matched by Ensembl ID instead, using the RODiC annotation file `ensembl_conversion_hg38_v23.txt`.

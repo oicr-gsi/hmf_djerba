@@ -6,11 +6,13 @@ Test of the genomic_landscape plugin
 
 import csv
 import json
+import logging
 import os
 import unittest
 from shutil import copy
 import hmf_djerba.plugins.hmf.wgts.cnv_purple.constants as purple_constants
 from hmf_djerba.plugins.plugin_tester_hmf import PluginTesterHMF
+from hmf_djerba.plugins.hmf.genomic_landscape.tmb import tmb_processor
 
 class TestGenomicLandscapePlugin(PluginTesterHMF):
     
@@ -41,6 +43,21 @@ class TestGenomicLandscapePlugin(PluginTesterHMF):
             self.MD5: '753bed1012632b361ff08706ce0fb0ca'
         }
         self.run_basic_test(input_dir, params, work_dir=work_dir)
+
+    def testMergedTcgaCodeCohort(self):
+        # contains the TMB comparison files
+        data_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+        tmb = tmb_processor(log_level=logging.ERROR, log_path=None)
+        # merged codes are joined with '/' for display
+        self.assertEqual(tmb.read_cohort(data_dir, "luad|lusc"), "TCGA LUAD/LUSC")
+        # a single code is unchanged
+        self.assertEqual(tmb.read_cohort(data_dir, "luad"), "TCGA LUAD")
+        self.assertEqual(tmb.read_cohort(data_dir, "paad"), "COMPASS")
+        self.assertEqual(tmb.read_cohort(data_dir, "zzz"), "NA")
+        # the merged percentile pools both cohorts, it does not pick one of them
+        self.assertEqual(tmb.read_cancer_specific_percentile(data_dir, 2.5, "TCGA LUAD", "luad"), 19)
+        self.assertEqual(tmb.read_cancer_specific_percentile(data_dir, 2.5, "TCGA LUSC", "lusc"), 3)
+        self.assertEqual(tmb.read_cancer_specific_percentile(data_dir, 2.5, "TCGA LUAD/LUSC", "luad|lusc"), 12)
 
     def redact_json_data(self, data):
         """replaces empty method from testing.tools"""
