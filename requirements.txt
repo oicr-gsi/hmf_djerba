@@ -1,4 +1,4 @@
-djerba==1.13.0
+djerba==1.13.3
 configparse
 email_validator
 jsonschema

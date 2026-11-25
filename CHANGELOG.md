@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## UNRELEASED
+- Pinned the Djerba requirement to v1.13.3, and ported the relevant changes from Djerba v1.13.2 and v1.13.3:
+- Genomic landscape plugin: updated `OncoTree.json` to `oncotree_2025_10_03`.
+- Genomic landscape plugin: support merged `tcga_code` values (e.g. `luad|lusc`).
+- Expression helper: transform GEP TPM values to log2(TPM + 0.001), rounded to 4 decimals, before comparison with RODiC TPM-data, which is stored on that scale.
+- Expression helper: genes with no variation in the TCGA pool are reported as NA instead of the 50th percentile.
+- Expression helper: genes whose symbol is not in the TCGA comparator are matched by Ensembl ID instead, using the RODiC annotation file `ensembl_conversion_hg38_v23.txt`.
+- Expression helper: write genes not found in the TCGA comparator to `data_expression_tcga_unmatched.txt`. SNV/indel and CNV plugins log a warning for each reported gene with no expression value (displayed as NA).
+- Expression helper: added a warning when gene IDs in the sample GEP results are not found in the GEP reference.
+- Expression helper: updated GEP reference to TPM (`gep_reference_tpm.txt.gz`).
+- GCGI-1808: Updated OncoKB links to _TERT_ promoter mutations.
+- Reinstated purity reporting thresholds in the genomic landscape plugin: HRD requires purity >=50% for FFPE samples and >=30% otherwise; MSI requires purity >=50%. Purity is read from the `cnv_purple` plugin's `purity_ploidy.json`, or the `purity` config parameter.
+
 ## v0.0.5: 2026-08-24
 - Pinned the Djerba requirement to v1.13.0.
 - Changed requirements to Python >=3.13.0 and oncokb-annotator >=4.0.0
